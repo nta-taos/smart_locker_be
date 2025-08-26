@@ -1,53 +1,52 @@
-import type {
-  Repository,
-  EntityTarget,
-  FindOptionsWhere,
-  DeepPartial,
-  FindOptionsRelations,
-  FindOptionsSelect
-} from 'typeorm'
+import type { Repository, EntityTarget, FindOptionsWhere, DeepPartial, FindManyOptions, FindOneOptions } from 'typeorm'
 
 import { AppDataSource } from '../config/data-source'
 import type { BaseModel } from '../entities/BaseModel'
+import { IBaseRepository } from './interfaces/IBaseRepository'
 
-export class BaseRepository<T extends BaseModel> {
+export class BaseRepository<T extends BaseModel> implements IBaseRepository<T> {
   protected repository: Repository<T>
 
   constructor(entity: EntityTarget<T>) {
     this.repository = AppDataSource.getRepository(entity)
   }
 
-  async findOne(id: number): Promise<T | null> {
-    return this.repository.findOneBy({ id } as unknown as FindOptionsWhere<T>)
+  // Find one by ID
+  async findById(id: number, options?: FindOneOptions<T>): Promise<T | null> {
+    return this.repository.findOne({
+      where: { id } as FindOptionsWhere<T>,
+      ...options
+    })
   }
 
-  async findOneWithOptions(options: {
-    where: FindOptionsWhere<T>
-    relations?: FindOptionsRelations<T>
-    select?: FindOptionsSelect<T>
-  }): Promise<T | null> {
-    return this.repository.findOne(options)
+  // Find one by condition
+  async findOneByCondition(where: FindOptionsWhere<T>, options?: Omit<FindOneOptions<T>, 'where'>): Promise<T | null> {
+    return this.repository.findOne({ where, ...options })
   }
 
-  async findAll(): Promise<T[]> {
-    return this.repository.find()
+  // Find all
+  async findAll(options?: FindManyOptions<T>): Promise<T[]> {
+    return this.repository.find(options)
   }
 
-  async create(data: DeepPartial<T>): Promise<T> {
+  // Create a new entity
+  async createEntity(data: DeepPartial<T>): Promise<T> {
     const entity = this.repository.create(data)
     return this.repository.save(entity)
   }
 
-  async update(id: number, data: DeepPartial<T>): Promise<T | null> {
-    const entity = await this.findOne(id)
+  // Update an existing entity
+  async updateEntity(id: number, data: DeepPartial<T>): Promise<T | null> {
+    const entity = await this.findById(id)
     if (!entity) return null
 
     Object.assign(entity, data)
     return this.repository.save(entity)
   }
 
-  async delete(id: number): Promise<boolean> {
+  // Delete an entity by ID
+  async deleteEntity(id: number): Promise<boolean> {
     const result = await this.repository.delete(id)
-    return result.affected ? result.affected > 0 : false
+    return (result.affected ?? 0) > 0
   }
 }
