@@ -1,7 +1,7 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm'
 
-import { BaseModel } from './BaseModel'
-import { Wallet } from './WalletModel'
+import { BaseModel } from './base.model'
+import { Wallet } from './wallet.model'
 
 @Entity('wallet_transactions')
 export class WalletTransaction extends BaseModel {

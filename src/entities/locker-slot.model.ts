@@ -1,7 +1,7 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm'
 
-import { BaseModel } from './BaseModel'
-import { Locker } from './LockerModel'
+import { BaseModel } from './base.model'
+import { Locker } from './locker.model'
 
 @Entity('locker_slots')
 export class LockerSlot extends BaseModel {

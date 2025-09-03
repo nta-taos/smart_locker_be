@@ -1,9 +1,7 @@
 import { Entity, Column, ManyToOne, JoinColumn, Unique } from 'typeorm'
 
-import { BaseModel } from './BaseModel'
-import { Building } from './BuildingModel'
-import { Location } from './LocationModel'
-import { User } from './UserModel'
+import { BaseModel } from './base.model'
+import { Building } from './building.model'
 
 @Entity('lockers')
 @Unique(['code'])
@@ -14,14 +12,6 @@ export class Locker extends BaseModel {
   @ManyToOne(() => Building, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'building_id' })
   building!: Building
-
-  @ManyToOne(() => Location, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'location_id' })
-  location!: Location
-
-  @ManyToOne(() => User, { nullable: false, onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'admin_id' })
-  admin!: User
 
   @Column({
     type: 'tinyint',

@@ -2,10 +2,11 @@ import type { Request, Response, NextFunction } from 'express'
 import { StatusCodes } from 'http-status-codes'
 import jwt from 'jsonwebtoken'
 
-import { ApiError } from '@/common/responses/ApiError'
+import { ApiError } from '@/common/responses/api-error'
 import { JWT_CONFIG } from '@/config/config'
 
-import ClientRedis from '../../config/RedisClient'
+import ClientRedis from '../../config/redis'
+import { ErrorMessages } from '../constants/messages'
 
 const clientRedis = ClientRedis.getClient()
 
@@ -15,24 +16,24 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     const token = authHeader?.split(' ')[1]
 
     if (!token) {
-      return next(new ApiError(StatusCodes.UNAUTHORIZED, 'Token is required.'))
+      return next(new ApiError(StatusCodes.UNAUTHORIZED, ErrorMessages.TOKEN_REQUIRED))
     }
 
     const isRevoked = await clientRedis.get(`blacklist:${token}`)
     if (isRevoked) {
-      return next(new ApiError(StatusCodes.UNAUTHORIZED, 'Token has been revoked.'))
+      return next(new ApiError(StatusCodes.UNAUTHORIZED, ErrorMessages.TOKEN_REVOKED))
     }
 
-    const decoded = jwt.verify(token, JWT_CONFIG.secretKey || 'tuananh123') as jwt.JwtPayload
+    const decoded = jwt.verify(token, JWT_CONFIG.secretKey) as jwt.JwtPayload
     if (!decoded || !decoded.user) {
-      return next(new ApiError(StatusCodes.UNAUTHORIZED, 'Phiên đang nhập đã hết hạn.'))
+      return next(new ApiError(StatusCodes.UNAUTHORIZED, ErrorMessages.TOKEN_EXPIRED))
     }
 
     return next()
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      return next(new ApiError(StatusCodes.UNAUTHORIZED, 'Phiên đang nhập đã hết hạn.'))
+      return next(new ApiError(StatusCodes.UNAUTHORIZED, ErrorMessages.TOKEN_EXPIRED))
     }
-    return next(new ApiError(StatusCodes.UNAUTHORIZED, 'Phiên đang nhập đã hết hạn.'))
+    return next(new ApiError(StatusCodes.UNAUTHORIZED, ErrorMessages.UNAUTHORIZED))
   }
 }

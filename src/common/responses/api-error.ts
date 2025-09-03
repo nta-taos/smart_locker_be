@@ -14,6 +14,11 @@ export class ApiError extends Error {
     Error.captureStackTrace(this, this.constructor)
   }
 
+  withErrors(errors: unknown) {
+    this.errors = errors
+    return this
+  }
+
   static badRequest(message: string) {
     return new ApiError(StatusCodes.BAD_REQUEST, message)
   }

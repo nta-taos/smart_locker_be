@@ -1,2 +1,2 @@
-export { ApiError } from './ApiError'
-export { ApiSuccess } from './ApiSuccess'
+export { ApiError } from './api-error'
+export { ApiSuccess } from './api-success'

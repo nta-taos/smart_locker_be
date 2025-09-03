@@ -1,8 +1,8 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm'
 
-import { BaseModel } from './BaseModel'
-import { Order } from './OrderModel'
-import { Rental } from './RentalModel'
+import { BaseModel } from './base.model'
+import { Order } from './order.model'
+import { Rental } from './rental.model'
 
 @Entity('order_authorizations')
 export class OrderAuthorization extends BaseModel {

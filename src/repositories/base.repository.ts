@@ -1,8 +1,8 @@
 import type { Repository, EntityTarget, FindOptionsWhere, DeepPartial, FindManyOptions, FindOneOptions } from 'typeorm'
 
-import { AppDataSource } from '../config/data-source'
-import type { BaseModel } from '../entities/BaseModel'
-import { IBaseRepository } from './interfaces/IBaseRepository'
+import { IBaseRepository } from './base.repository.interface'
+import { AppDataSource } from '../config/mysql'
+import type { BaseModel } from '../entities/base.model'
 
 export class BaseRepository<T extends BaseModel> implements IBaseRepository<T> {
   protected repository: Repository<T>

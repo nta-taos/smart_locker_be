@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express'
 import { StatusCodes, getReasonPhrase } from 'http-status-codes'
 
-import { ApiError } from '@/common/responses/ApiError'
+import { ApiError } from '@/common/responses/api-error'
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const errorHandler = (err: ApiError | Error, req: Request, res: Response, next: NextFunction): void => {
