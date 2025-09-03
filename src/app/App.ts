@@ -7,12 +7,12 @@ import morgan from 'morgan'
 import path from 'path'
 import socketIo from 'socket.io'
 
-import { errorHandler } from '@/common/middleware/errorHandling'
+import { errorHandler } from '@/common/middleware/error-handling.middleware'
 import { ENV } from '@/config/config'
 
-import { ApiError } from '../common/responses/ApiError'
-import { AppDataSource } from '../config/data-source'
-import RedisClient from '../config/RedisClient'
+import { ApiError } from '../common/responses/api-error'
+import { AppDataSource } from '../config/mysql'
+import RedisClient from '../config/redis'
 import routes from '../routes/index'
 
 class App {

@@ -1,4 +1,4 @@
-import { PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm'
+import { PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from 'typeorm'
 
 export abstract class BaseModel {
   @PrimaryGeneratedColumn()
@@ -9,4 +9,7 @@ export abstract class BaseModel {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updated_at!: Date
+
+  @DeleteDateColumn({ name: 'deleted_at' })
+  deleted_at?: Date
 }
