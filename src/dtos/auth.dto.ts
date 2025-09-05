@@ -32,3 +32,18 @@ export class RegisterDto {
   @IsIn([UserRole.USER, UserRole.SHIPPER], { message: ValidationMessages.ROLE_INVALID })
   readonly role?: number
 }
+
+/**
+ * DTO for user login
+ */
+export class LoginDto {
+  @IsNotEmpty({ message: ValidationMessages.PHONE_REQUIRED })
+  @Matches(/^0\d{9}$/, {
+    message: ValidationMessages.PHONE_INVALID
+  })
+  readonly phone!: string
+
+  @IsNotEmpty({ message: ValidationMessages.PASSWORD_REQUIRED })
+  @MinLength(8, { message: ValidationMessages.PASSWORD_MIN_LENGTH })
+  readonly password!: string
+}

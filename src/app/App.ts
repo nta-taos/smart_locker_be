@@ -12,7 +12,7 @@ import { ENV } from '@/config/config'
 
 import { ApiError } from '../common/responses/api-error'
 import { AppDataSource } from '../config/mysql'
-import RedisClient from '../config/redis'
+import { redisService } from '../config/redis'
 import routes from '../routes/index'
 
 class App {
@@ -42,8 +42,7 @@ class App {
 
   private async cacheConnect(): Promise<void> {
     try {
-      await RedisClient.connect()
-      console.log('✅ Redis connected successfully!')
+      await redisService
     } catch (error) {
       console.error('❌ Redis connection error:', error)
     }

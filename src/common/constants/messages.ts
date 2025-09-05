@@ -1,7 +1,8 @@
 export const SuccessMessages = {
   USER_REGISTERED: 'Đăng ký người dùng thành công.',
   USER_CREATED: 'Tạo người dùng thành công.',
-  TOKEN_VALID: 'Token hợp lệ.'
+  TOKEN_VALID: 'Token hợp lệ.',
+  USER_LOGGED_IN: 'Đăng nhập thành công.'
 }
 
 export const ErrorMessages = {
@@ -12,7 +13,8 @@ export const ErrorMessages = {
   UNAUTHORIZED: 'Không có quyền truy cập.',
   PHONE_ALREADY_REGISTERED: 'Số điện thoại đã tồn tại.',
   EMAIL_ALREADY_REGISTERED: 'Email đã tồn tại.',
-  BUILDING_NOT_FOUND: 'Tòa nhà không tồn tại,'
+  BUILDING_NOT_FOUND: 'Tòa nhà không tồn tại.',
+  LOGIN_FAILED: 'Đăng nhập thất bại.'
 }
 
 export const ValidationMessages = {

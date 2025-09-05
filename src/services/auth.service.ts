@@ -58,4 +58,8 @@ export class AuthService {
 
     return this.userRepository.createEntity(newUser)
   }
+
+  async findByPhone(phone: string): Promise<User | null> {
+    return this.userRepository.findByPhone(phone)
+  }
 }
