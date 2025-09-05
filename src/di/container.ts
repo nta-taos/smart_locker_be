@@ -12,9 +12,9 @@ import { UserRepository } from '../repositories/user.repository'
 const container = new Container()
 
 // Bind User-related dependencies
-container.bind(TYPES.UserRepository).to(UserRepository)
-container.bind(TYPES.UserService).to(UserService)
-container.bind(TYPES.UserController).to(UserController)
+container.bind<UserRepository>(TYPES.UserRepository).to(UserRepository)
+container.bind<UserService>(TYPES.UserService).to(UserService)
+container.bind<UserController>(TYPES.UserController).to(UserController)
 
 // Bind auth dependencies
 container.bind<AuthService>(TYPES.AuthService).to(AuthService)
