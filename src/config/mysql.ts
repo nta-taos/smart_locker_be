@@ -11,7 +11,7 @@ export const AppDataSource = new DataSource({
   password: MYSQL_CONFIG.password,
   database: MYSQL_CONFIG.database,
   synchronize: ENV === 'development',
-  logging: ENV === 'development',
+  logging: false,
   entities: [ENV === 'production' ? __dirname + '/../entities/*.js' : __dirname + '/../entities/*.ts'],
   migrations: [ENV === 'production' ? __dirname + '/../migrations/*.js' : __dirname + '/../migrations/*.ts'],
   subscribers: [],

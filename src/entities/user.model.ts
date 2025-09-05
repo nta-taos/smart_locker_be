@@ -1,5 +1,7 @@
 import { Entity, Column, Unique, ManyToOne, JoinColumn, OneToOne, OneToMany } from 'typeorm'
 
+import { ApprovalStatus, UserRole } from '@/common/enum/role.enum'
+
 import { BaseModel } from './base.model'
 import { Building } from './building.model'
 import { Order } from './order.model'
@@ -24,7 +26,7 @@ export class User extends BaseModel {
 
   @Column({
     type: 'tinyint',
-    default: 0,
+    default: UserRole.USER,
     nullable: false,
     comment: 'Vai trò: 0=User, 1=Shipper, 2=Admin, 3=SuperAdmin'
   })
@@ -32,15 +34,22 @@ export class User extends BaseModel {
 
   @Column({
     type: 'tinyint',
-    default: 0,
+    default: ApprovalStatus.PENDING,
     nullable: false,
     comment: 'Trạng thái phê duyệt: 0=Pending, 1=Accepted, 2=Rejected'
   })
   approval_status!: number
 
-  @ManyToOne(() => Building, (building) => building.users, { nullable: false, onDelete: 'CASCADE' })
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true
+  })
+  avatar?: string
+
+  @ManyToOne(() => Building, (building) => building.users, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'building_id' })
-  building!: Building
+  building?: Building
 
   @OneToOne(() => Wallet, { cascade: true })
   @JoinColumn({ name: 'wallet_id' })
