@@ -2,45 +2,78 @@ import Redis from 'ioredis'
 
 import { REDIS_CONFIG } from './config'
 
-class RedisClient {
+class RedisService {
+  private static instance: RedisService
   private client: Redis
+  private defaultTTL = 3600
+  private maxRetry = 5
 
-  constructor() {
+  private constructor() {
     this.client = new Redis({
       host: REDIS_CONFIG.host,
-      port: Number(REDIS_CONFIG.port),
+      port: REDIS_CONFIG.port,
       password: REDIS_CONFIG.password,
-      db: Number(REDIS_CONFIG.db),
-      retryStrategy: (times) => Math.min(times * 50, 2000)
+      retryStrategy: (times) => {
+        if (times > this.maxRetry) return null
+        const delay = Math.min(times * 2000, 60000)
+        console.log(`Redis retry #${times}, next attempt in ${delay}ms`)
+        return delay
+      }
     })
 
-    this.client.on('connect', () => console.log('✅ Redis connected!'))
-    this.client.on('error', (err) => console.error('❌ Redis error:', err))
+    this.client.on('connect', () => console.log('Redis connected'))
+    this.client.on('ready', () => console.log('Redis ready'))
+    this.client.on('error', (err) => console.error('Redis error', err))
+    this.client.on('close', () => console.log('Redis connection closed'))
+    this.client.on('reconnecting', (times: number) => console.log(`Redis reconnecting, attempt #${times}`))
   }
 
-  public async connect(): Promise<void> {
-    await this.client.ping()
+  public static getInstance(): RedisService {
+    if (!RedisService.instance) {
+      RedisService.instance = new RedisService()
+    }
+    return RedisService.instance
   }
 
-  public async get(key: string): Promise<string | null> {
-    return this.client.get(key)
+  async setCache(key: string, value: unknown, ttlSeconds?: number) {
+    const data = typeof value === 'string' ? value : JSON.stringify(value)
+    await this.client.set(key, data, 'EX', ttlSeconds || this.defaultTTL)
   }
 
-  public async set(key: string, value: string, ttl?: number): Promise<void> {
-    if (ttl) {
-      await this.client.set(key, value, 'EX', ttl)
-    } else {
-      await this.client.set(key, value)
+  async getCache<T>(key: string): Promise<T | null> {
+    const data = await this.client.get(key)
+    if (!data) return null
+    try {
+      return JSON.parse(data) as T
+    } catch {
+      return data as unknown as T
     }
   }
 
-  public async del(key: string): Promise<void> {
+  async delCache(key: string) {
     await this.client.del(key)
   }
 
-  public getClient(): Redis {
+  async safeSetCache(key: string, value: unknown, ttlSeconds?: number) {
+    try {
+      await this.setCache(key, value, ttlSeconds)
+    } catch (err) {
+      console.error(`Redis safeSetCache error for key "${key}":`, err)
+    }
+  }
+
+  async safeGetCache<T>(key: string): Promise<T | null> {
+    try {
+      return await this.getCache<T>(key)
+    } catch (err) {
+      console.error(`Redis safeGetCache error for key "${key}":`, err)
+      return null
+    }
+  }
+
+  getClient() {
     return this.client
   }
 }
 
-export default new RedisClient()
+export const redisService = RedisService.getInstance()
