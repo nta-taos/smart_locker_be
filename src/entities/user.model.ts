@@ -51,7 +51,7 @@ export class User extends BaseModel {
   @JoinColumn({ name: 'building_id' })
   building?: Building
 
-  @OneToOne(() => Wallet, { cascade: true })
+  @OneToOne(() => Wallet, (wallet) => wallet.user, { cascade: true })
   @JoinColumn({ name: 'wallet_id' })
   wallet!: Wallet
 

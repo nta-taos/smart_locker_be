@@ -4,10 +4,16 @@ import { Request, Response, NextFunction } from 'express'
 
 import { ApiError } from '../responses'
 
-export function validationMiddleware<T extends object>(type: new () => T) {
+export function validationMiddleware<T extends object>(
+  type: new () => T,
+  source: 'body' | 'query' | 'params' = 'body'
+) {
   return async (req: Request, res: Response, next: NextFunction) => {
-    const dto = plainToInstance(type, req.body)
-    const errors = await validate(dto)
+    const dto = plainToInstance(type, req[source], {
+      enableImplicitConversion: true
+    })
+
+    const errors = await validate(dto, { whitelist: true })
     if (errors.length > 0) {
       const formattedErrors = errors.reduce(
         (acc, err) => {
@@ -18,6 +24,7 @@ export function validationMiddleware<T extends object>(type: new () => T) {
       )
       return next(ApiError.badRequest('Validation Error').withErrors(formattedErrors))
     }
+
     next()
   }
 }

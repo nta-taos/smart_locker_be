@@ -5,7 +5,7 @@ import { Wallet } from './wallet.model'
 
 @Entity('wallet_transactions')
 export class WalletTransaction extends BaseModel {
-  @ManyToOne(() => Wallet, { nullable: false, onDelete: 'CASCADE' })
+  @ManyToOne(() => Wallet, (wallet) => wallet.transactions, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'wallet_id' })
   wallet!: Wallet
 

@@ -9,7 +9,12 @@ const TYPES = {
   AuthController: Symbol.for('AuthController'),
 
   // building
-  BuildingRepository: Symbol.for('BuildingRepository')
+  BuildingRepository: Symbol.for('BuildingRepository'),
+
+  // wallet transaction
+  WalletTransactionRepository: Symbol.for('WalletTransactionRepository'),
+  WalletTransactionService: Symbol.for('WalletTransactionService'),
+  WalletTransactionController: Symbol.for('WalletTransactionController')
 }
 
 export default TYPES
