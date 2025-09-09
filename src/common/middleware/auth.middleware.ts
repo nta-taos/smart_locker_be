@@ -8,6 +8,7 @@ import { container } from '@/di/container'
 import TYPES from '@/di/types'
 import { UserService } from '@/services/user.service'
 
+import { CacheKeys } from '../constants/cache-keys'
 import { ErrorMessages } from '../constants/messages'
 
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
@@ -19,7 +20,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       throw ApiError.unauthorized(ErrorMessages.TOKEN_REQUIRED)
     }
 
-    const isRevoked = await redisService.safeGetCache(`blacklist:${token}`)
+    const isRevoked = await redisService.safeGetCache(CacheKeys.BLACKLIST_TOKEN(token))
     if (isRevoked) {
       throw ApiError.unauthorized(ErrorMessages.TOKEN_REVOKED)
     }

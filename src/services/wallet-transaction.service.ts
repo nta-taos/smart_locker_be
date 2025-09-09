@@ -1,6 +1,7 @@
 import autoBind from 'auto-bind'
 import { injectable, inject } from 'inversify'
 
+import { CacheKeys } from '@/common/constants/cache-keys'
 import { redisService } from '@/config/redis'
 import TYPES from '@/di/types'
 import { WalletTransactionRepository } from '@/repositories/wallet-transaction.repository'
@@ -14,14 +15,14 @@ export class WalletTransactionService {
   }
 
   async getTransactionsByUser(userId: number, page: number = 1, limit: number = 6) {
-    const cached = await redisService.safeGetCache(`wallet-transaction:${userId}:${page}:${limit}`)
+    const cached = await redisService.safeGetCache(CacheKeys.WALLET_TRANSACTIONS(userId, page, limit))
     if (cached) {
       return cached
     }
 
     const { transactions, total } = await this.transactionRepo.findByUserId(userId, page, limit)
 
-    await redisService.safeSetCache(`wallet-transaction:${userId}:${page}:${limit}`, {
+    await redisService.safeSetCache(CacheKeys.WALLET_TRANSACTIONS(userId, page, limit), {
       page,
       limit,
       total,
