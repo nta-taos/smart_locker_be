@@ -9,6 +9,7 @@ import socketIo from 'socket.io'
 
 import { errorHandler } from '@/common/middleware/error-handling.middleware'
 import { ENV } from '@/config/config'
+import { mqttService } from '@/services/mqtt.service'
 
 import { ApiError } from '../common/responses/api-error'
 import { AppDataSource } from '../config/mysql'
@@ -26,6 +27,7 @@ class App {
     this.server = http.createServer(this.app)
     this.io = new socketIo.Server(this.server, { cors: { origin: '*' } })
     this.socketClients = new Map()
+    mqttService.getClient()
     this.plugins()
     this.databaseSync()
     this.cacheConnect()

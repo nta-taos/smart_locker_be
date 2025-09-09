@@ -23,3 +23,9 @@ export const JWT_CONFIG = {
   secretKey: process.env.JWT_SECRET_KEY || 'default_secret_key',
   expiresIn: process.env.JWT_EXPIRES_IN || '1d'
 }
+
+export const MQTT_CONFIG = {
+  brokerUrl: process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883',
+  username: process.env.MQTT_USERNAME || '',
+  password: process.env.MQTT_PASSWORD || ''
+}
