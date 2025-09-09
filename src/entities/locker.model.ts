@@ -1,7 +1,8 @@
-import { Entity, Column, ManyToOne, JoinColumn, Unique } from 'typeorm'
+import { Entity, Column, ManyToOne, JoinColumn, Unique, OneToMany } from 'typeorm'
 
 import { BaseModel } from './base.model'
 import { Building } from './building.model'
+import { LockerSlot } from './locker-slot.model'
 
 @Entity('lockers')
 @Unique(['code'])
@@ -20,4 +21,7 @@ export class Locker extends BaseModel {
     comment: 'Trạng thái: 0=Inactive, 1=Active, 2=Maintenance'
   })
   status!: number
+
+  @OneToMany(() => LockerSlot, (slot) => slot.locker)
+  slots!: LockerSlot[]
 }

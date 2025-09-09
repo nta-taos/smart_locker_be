@@ -18,7 +18,7 @@ export class BuildingService {
     if (!publicBuildings) {
       publicBuildings = await this.buildingRepository.findAll({
         where: { isPublic: true },
-        relations: ['lockers']
+        relations: ['lockers', 'lockers.slots']
       })
       await redisService.safeSetCache(CacheKeys.PUBLIC_BUILDINGS, publicBuildings)
     }
@@ -30,7 +30,7 @@ export class BuildingService {
           isPublic: false,
           users: { id: userId }
         },
-        relations: ['lockers']
+        relations: ['lockers', 'lockers.slots']
       })
     }
 
