@@ -5,7 +5,6 @@ import { ApprovalStatus, UserRole } from '@/common/enum/role.enum'
 import { BaseModel } from './base.model'
 import { Building } from './building.model'
 import { Order } from './order.model'
-import { Rental } from './rental.model'
 import { Wallet } from './wallet.model'
 
 @Entity('users')
@@ -54,9 +53,6 @@ export class User extends BaseModel {
   @OneToOne(() => Wallet, (wallet) => wallet.user, { cascade: true })
   @JoinColumn({ name: 'wallet_id' })
   wallet!: Wallet
-
-  @OneToMany(() => Rental, (rental) => rental.user)
-  rentals!: Rental[]
 
   @OneToMany(() => Order, (order) => order.sender)
   sentOrders!: Order[]

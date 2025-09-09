@@ -7,7 +7,9 @@ export const SuccessMessages = {
   TRANSACTION_RETRIEVED: 'Lấy thông tin giao dịch thành công.',
   TRANSACTION_CREATED: 'Tạo giao dịch thành công.',
   TRANSACTION_UPDATED: 'Cập nhật giao dịch thành công.',
-  TRANSACTION_DELETED: 'Xóa giao dịch thành công.'
+  TRANSACTION_DELETED: 'Xóa giao dịch thành công.',
+
+  BUILDING_PUBLIC_RETRIEVED: 'Lấy danh sách building public thành công.'
 }
 
 export const ErrorMessages = {

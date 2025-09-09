@@ -1,11 +1,13 @@
 import { Container } from 'inversify'
 
 import { AuthController } from '@/controllers/auth.controller'
+import { BuildingController } from '@/controllers/building.controller'
 import { UserController } from '@/controllers/user.controller'
 import { WalletTransactionController } from '@/controllers/wallet-transaction.controller'
 import { BuildingRepository } from '@/repositories/building.repository'
 import { WalletTransactionRepository } from '@/repositories/wallet-transaction.repository'
 import { AuthService } from '@/services/auth.service'
+import { BuildingService } from '@/services/building.service'
 import { UserService } from '@/services/user.service'
 import { WalletTransactionService } from '@/services/wallet-transaction.service'
 
@@ -25,6 +27,8 @@ container.bind<AuthController>(TYPES.AuthController).to(AuthController)
 
 // Bind building dependencies
 container.bind<BuildingRepository>(TYPES.BuildingRepository).to(BuildingRepository)
+container.bind<BuildingService>(TYPES.BuildingService).to(BuildingService)
+container.bind<BuildingController>(TYPES.BuildingController).to(BuildingController)
 
 // Bind wallet transaction dependencies
 container.bind<WalletTransactionRepository>(TYPES.WalletTransactionRepository).to(WalletTransactionRepository)

@@ -10,6 +10,8 @@ const TYPES = {
 
   // building
   BuildingRepository: Symbol.for('BuildingRepository'),
+  BuildingService: Symbol.for('BuildingService'),
+  BuildingController: Symbol.for('BuildingController'),
 
   // wallet transaction
   WalletTransactionRepository: Symbol.for('WalletTransactionRepository'),

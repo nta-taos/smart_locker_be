@@ -3,6 +3,7 @@ import bcryptjs from 'bcryptjs'
 import { NextFunction, Request, Response } from 'express'
 import { injectable, inject } from 'inversify'
 
+import { CacheKeys } from '@/common/constants/cache-keys'
 import { ErrorMessages, SuccessMessages } from '@/common/constants/messages'
 import { ApiError, ApiSuccess } from '@/common/responses'
 import { signToken } from '@/common/utils/jwt'
@@ -25,7 +26,7 @@ export class AuthController {
 
       const userData = { ...user }
       delete (userData as Partial<User>).password
-      await redisService.safeSetCache(`user:${userData.id}`, userData)
+      await redisService.safeSetCache(CacheKeys.USER(user.id), userData)
 
       const token = signToken({
         sub: user.id.toString(),
@@ -58,7 +59,7 @@ export class AuthController {
 
       const userData = { ...user }
       delete (userData as Partial<typeof user>).password
-      await redisService.safeSetCache(`user:${user.id}`, userData)
+      await redisService.safeSetCache(CacheKeys.USER(user.id), userData)
 
       return ApiSuccess.ok({ user: userData, token }, SuccessMessages.USER_LOGGED_IN).send(res)
     } catch (err) {
