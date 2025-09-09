@@ -23,4 +23,7 @@ export class Building extends BaseModel {
 
   @OneToMany(() => User, (user) => user.building)
   users!: User[]
+
+  @Column({ type: 'boolean', default: true })
+  isPublic!: boolean
 }
