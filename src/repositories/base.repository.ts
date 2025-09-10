@@ -29,6 +29,12 @@ export class BaseRepository<T extends BaseModel> implements IBaseRepository<T> {
     return this.repository.find(options)
   }
 
+  // Find with pagination and count
+  async findAndCount(options?: FindManyOptions<T>): Promise<{ data: T[]; total: number }> {
+    const [data, total] = await this.repository.findAndCount(options)
+    return { data, total }
+  }
+
   // Create a new entity
   async createEntity(data: DeepPartial<T>): Promise<T> {
     const entity = this.repository.create(data)
@@ -46,7 +52,7 @@ export class BaseRepository<T extends BaseModel> implements IBaseRepository<T> {
 
   // Delete an entity by ID
   async deleteEntity(id: number): Promise<boolean> {
-    const result = await this.repository.delete(id)
+    const result = await this.repository.softDelete(id)
     return (result.affected ?? 0) > 0
   }
 }

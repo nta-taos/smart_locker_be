@@ -16,7 +16,12 @@ const TYPES = {
   // wallet transaction
   WalletTransactionRepository: Symbol.for('WalletTransactionRepository'),
   WalletTransactionService: Symbol.for('WalletTransactionService'),
-  WalletTransactionController: Symbol.for('WalletTransactionController')
+  WalletTransactionController: Symbol.for('WalletTransactionController'),
+
+  // order
+  OrderRepository: Symbol.for('OrderRepository'),
+  OrderService: Symbol.for('OrderService'),
+  OrderController: Symbol.for('OrderController')
 }
 
 export default TYPES
