@@ -1,0 +1,17 @@
+import { Router } from 'express'
+
+import { authMiddleware } from '@/common/middleware/auth.middleware'
+import { validationMiddleware } from '@/common/middleware/validation.middleware'
+import { OrderController } from '@/controllers/order.controller'
+import { container } from '@/di/container'
+import TYPES from '@/di/types'
+import { GetOrdersQueryDto } from '@/dtos/order.dto'
+
+const orderRouter = Router()
+
+const orderController = container.get<OrderController>(TYPES.OrderController)
+
+orderRouter.use(authMiddleware)
+orderRouter.get('/', validationMiddleware(GetOrdersQueryDto, 'query'), orderController.getMyOrders)
+
+export default orderRouter
