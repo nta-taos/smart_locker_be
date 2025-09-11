@@ -13,5 +13,6 @@ const orderController = container.get<OrderController>(TYPES.OrderController)
 
 orderRouter.use(authMiddleware)
 orderRouter.get('/', validationMiddleware(GetOrdersQueryDto, 'query'), orderController.getMyOrders)
+orderRouter.get('/stats/last-7-days', orderController.getStats)
 
 export default orderRouter
