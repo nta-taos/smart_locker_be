@@ -104,4 +104,23 @@ export class OrderService {
       data: data
     }
   }
+
+  async getOrderStatsLast7Days(userId: number) {
+    const shipperOrders = await this.orderRepository.countShipperOrdersLast7Days(userId)
+    const userOrders = await this.orderRepository.countUserOrdersLast7Days(userId)
+
+    const results: { date: string; shipperOrders: number; userOrders: number }[] = []
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date()
+      d.setDate(d.getDate() - i)
+      const dateStr = d.toISOString().split('T')[0]
+      results.push({
+        date: dateStr,
+        shipperOrders: shipperOrders.get(dateStr) ?? 0,
+        userOrders: userOrders.get(dateStr) ?? 0
+      })
+    }
+
+    return results
+  }
 }

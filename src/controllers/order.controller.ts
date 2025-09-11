@@ -31,4 +31,14 @@ export class OrderController {
       next(err)
     }
   }
+
+  async getStats(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = (req.user as User).id
+      const stats = await this.orderService.getOrderStatsLast7Days(userId)
+      return ApiSuccess.ok(stats, SuccessMessages.ORDER_STATS_RETRIEVED).send(res)
+    } catch (err) {
+      next(err)
+    }
+  }
 }

@@ -11,7 +11,8 @@ export const SuccessMessages = {
 
   BUILDING_PUBLIC_RETRIEVED: 'Lấy danh sách building public thành công.',
 
-  ORDERS_RETRIEVED: 'Lấy danh sách đơn hàng thành công.'
+  ORDERS_RETRIEVED: 'Lấy danh sách đơn hàng thành công.',
+  ORDER_STATS_RETRIEVED: 'Lấy thống kê đơn hàng 7 ngày gần nhất thành công.'
 }
 
 export const ErrorMessages = {
