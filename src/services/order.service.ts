@@ -1,8 +1,11 @@
 import autoBind from 'auto-bind'
 import { injectable, inject } from 'inversify'
+import { FindOptionsWhere } from 'typeorm'
 
+import { OrderStatus } from '@/common/enum/order.enum'
 import { calculateFee } from '@/common/utils/helpers'
 import TYPES from '@/di/types'
+import { Order } from '@/entities/order.model'
 import { OrderRepository } from '@/repositories/order.repository'
 
 @injectable()
@@ -11,9 +14,20 @@ export class OrderService {
     autoBind(this)
   }
 
-  async getOrdersByUserId(userId: number, page: number = 1, limit: number = 6) {
+  async getOrdersByUserId(userId: number, status: string = 'all', page: number = 1, limit: number = 6) {
+    const whereCondition: FindOptionsWhere<Order> = {
+      sender: { id: userId },
+      receiver: { id: userId }
+    }
+
+    if (status === 'pending') {
+      whereCondition.status = OrderStatus.PENDING
+    } else if (status === 'received') {
+      whereCondition.status = OrderStatus.RECEIVED
+    }
+
     const { data, total } = await this.orderRepository.findAndCount({
-      where: [{ sender: { id: userId } }, { receiver: { id: userId } }],
+      where: whereCondition,
       relations: ['sender', 'receiver', 'lockerSlot'],
       order: { start_time: 'DESC' },
       skip: (page - 1) * limit,
@@ -62,10 +76,19 @@ export class OrderService {
       data: order
     }
   }
+  async getOrdersByShipperId(shipperId: number, status: string = 'all', page: number = 1, limit: number = 6) {
+    const whereCondition: FindOptionsWhere<Order> = {
+      sender: { id: shipperId }
+    }
 
-  async getOrdersByShipperId(shipperId: number, page: number = 1, limit: number = 6) {
+    if (status === 'pending') {
+      whereCondition.status = OrderStatus.PENDING
+    } else if (status === 'received') {
+      whereCondition.status = OrderStatus.RECEIVED
+    }
+
     const { data, total } = await this.orderRepository.findAndCount({
-      where: [{ sender: { id: shipperId } }],
+      where: whereCondition,
       relations: ['sender', 'receiver', 'lockerSlot'],
       order: { start_time: 'DESC' },
       skip: (page - 1) * limit,

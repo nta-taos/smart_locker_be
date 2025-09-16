@@ -21,11 +21,13 @@ export class OrderController {
       const role = (req.user as User).role
       const page = parseInt(req.query.page as string) || undefined
       const limit = parseInt(req.query.limit as string) || undefined
+      // (pending | received | all)
+      const status = (req.query.status as string) || 'all'
       if (role === UserRole.SHIPPER) {
-        const orders = await this.orderService.getOrdersByShipperId(userId, page, limit)
+        const orders = await this.orderService.getOrdersByShipperId(userId, status, page, limit)
         return ApiSuccess.ok(orders, SuccessMessages.ORDERS_RETRIEVED).send(res)
       }
-      const orders = await this.orderService.getOrdersByUserId(userId, page, limit)
+      const orders = await this.orderService.getOrdersByUserId(userId, status, page, limit)
       return ApiSuccess.ok(orders, SuccessMessages.ORDERS_RETRIEVED).send(res)
     } catch (err) {
       next(err)
