@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer'
-import { IsOptional, Min } from 'class-validator'
+import { IsIn, IsOptional, Min } from 'class-validator'
 
 import { ValidationMessages } from '@/common/constants/messages'
 
@@ -13,4 +13,10 @@ export class GetOrdersQueryDto {
   @Type(() => Number)
   @Min(1, { message: ValidationMessages.LIMIT_MIN })
   limit?: number
+
+  @IsOptional()
+  @IsIn(['pending', 'received', 'all'], {
+    message: 'Status must be one of: pending, received, all'
+  })
+  status?: 'pending' | 'received' | 'all' = 'all'
 }
