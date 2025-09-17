@@ -3,6 +3,7 @@ export const SuccessMessages = {
   USER_CREATED: 'Tạo người dùng thành công.',
   TOKEN_VALID: 'Token hợp lệ.',
   USER_LOGGED_IN: 'Đăng nhập thành công.',
+  USER_UPDATED: 'Cập nhật người dùng thành công',
 
   TRANSACTION_RETRIEVED: 'Lấy thông tin giao dịch thành công.',
   TRANSACTION_CREATED: 'Tạo giao dịch thành công.',
@@ -21,18 +22,25 @@ export const ErrorMessages = {
   TOKEN_EXPIRED: 'Phiên đang nhập đã hết hạn.',
   TOKEN_INVALID: 'Token không hợp lệ.',
 
+  REGISTER_ERROR: 'Tạo người dùng thất bại',
   USER_NOT_FOUND: 'Người dùng không tồn tại.',
   UNAUTHORIZED: 'Không có quyền truy cập.',
   PHONE_ALREADY_REGISTERED: 'Số điện thoại đã tồn tại.',
   EMAIL_ALREADY_REGISTERED: 'Email đã tồn tại.',
   BUILDING_NOT_FOUND: 'Tòa nhà không tồn tại.',
-  LOGIN_FAILED: 'Đăng nhập thất bại.'
+  LOGIN_FAILED: 'Đăng nhập thất bại.',
+
+  IMAGE_REQUIRED: 'Không có file để lưu.',
+  IMAGE_INVALID: 'Chỉ được upload file ảnh.',
+
+  UPDATE_USER_FAILED: 'Cập nhật người dùng không thành công.'
 }
 
 export const ValidationMessages = {
   PHONE_INVALID: 'Số điện thoại không hợp lệ',
   PHONE_REQUIRED: 'Số điện thoại là bắt buộc.',
   NAME_REQUIRED: 'Tên là bắt buộc.',
+  NAME_MAX_LENGTH: 'Tên không được quá 50 ký tự.',
   EMAIL_REQUIRED: 'Email là bắt buộc',
   EMAIL_INVALID: 'Email không hợp lệ',
   PASSWORD_REQUIRED: 'Mật khẩu là bắt buộc.',

@@ -10,6 +10,7 @@ import { OrderRepository } from '@/repositories/order.repository'
 import { WalletTransactionRepository } from '@/repositories/wallet-transaction.repository'
 import { AuthService } from '@/services/auth.service'
 import { BuildingService } from '@/services/building.service'
+import { ImageUploadService } from '@/services/image-upload.service'
 import { OrderService } from '@/services/order.service'
 import { UserService } from '@/services/user.service'
 import { WalletTransactionService } from '@/services/wallet-transaction.service'
@@ -42,5 +43,8 @@ container.bind<WalletTransactionController>(TYPES.WalletTransactionController).t
 container.bind<OrderRepository>(TYPES.OrderRepository).to(OrderRepository)
 container.bind<OrderService>(TYPES.OrderService).to(OrderService)
 container.bind<OrderController>(TYPES.OrderController).to(OrderController)
+
+// Bind uploand image
+container.bind<ImageUploadService>(TYPES.ImageUploadService).to(ImageUploadService)
 
 export { container }
