@@ -21,7 +21,10 @@ const TYPES = {
   // order
   OrderRepository: Symbol.for('OrderRepository'),
   OrderService: Symbol.for('OrderService'),
-  OrderController: Symbol.for('OrderController')
+  OrderController: Symbol.for('OrderController'),
+
+  // uploand
+  ImageUploadService: Symbol.for('ImageUploadService')
 }
 
 export default TYPES
