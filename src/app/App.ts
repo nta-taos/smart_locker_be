@@ -52,7 +52,7 @@ class App {
 
   private routes(): void {
     this.app.use('/api', routes)
-    this.app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
+    this.app.use('/uploads', express.static(path.join(__dirname, '../../uploads')))
   }
 
   private plugins(): void {

@@ -21,6 +21,7 @@
     "@types/express": "^5.0.1",
     "@types/ioredis": "^5.0.0",
     "@types/morgan": "^1.9.9",
+    "@types/multer": "^2.0.0",
     "@types/node": "^22.13.13",
     "@types/nodemailer": "^6.4.17",
     "@types/passport": "^1.0.17",
@@ -58,12 +59,14 @@
     "ioredis": "^5.6.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "multer": "^2.0.2",
     "mqtt": "^5.14.1",
     "mysql2": "^2.2.5",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "path": "^0.12.7",
     "reflect-metadata": "^0.2.2",
+    "sharp": "^0.34.3",
     "socket.io": "^4.8.1",
     "typeorm": "^0.3.21"
   }
