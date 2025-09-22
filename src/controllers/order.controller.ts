@@ -2,9 +2,9 @@ import autoBind from 'auto-bind'
 import { NextFunction, Request, Response } from 'express'
 import { injectable, inject } from 'inversify'
 
-import { SuccessMessages } from '@/common/constants/messages'
+import { ErrorMessages, SuccessMessages } from '@/common/constants/messages'
 import { UserRole } from '@/common/enum/role.enum'
-import { ApiSuccess } from '@/common/responses'
+import { ApiError, ApiSuccess } from '@/common/responses'
 import TYPES from '@/di/types'
 import { User } from '@/entities/user.model'
 import { OrderService } from '@/services/order.service'
@@ -39,6 +39,38 @@ export class OrderController {
       const userId = (req.user as User).id
       const stats = await this.orderService.getOrderStatsLast7Days(userId)
       return ApiSuccess.ok(stats, SuccessMessages.ORDER_STATS_RETRIEVED).send(res)
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async createOrderUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = (req.user as User).id
+      const role = (req.user as User).role
+      if (role !== UserRole.USER) {
+        throw ApiError.unauthorized(ErrorMessages.UNAUTHORIZED)
+      }
+      const { endTime, lockerSlotId } = req.body
+      const order = await this.orderService.createOrderUser(userId, endTime, lockerSlotId)
+
+      return ApiSuccess.ok(order, SuccessMessages.ORDER_CREATED).send(res)
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async createOrderShipper(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = (req.user as User).id
+      const role = (req.user as User).role
+      if (role !== UserRole.SHIPPER) {
+        throw ApiError.unauthorized(ErrorMessages.UNAUTHORIZED)
+      }
+      const { phone, lockerSlotId, order_code } = req.body
+      const order = await this.orderService.createOrderShpper(userId, phone, lockerSlotId, order_code)
+
+      return ApiSuccess.ok(order, SuccessMessages.ORDER_CREATED).send(res)
     } catch (err) {
       next(err)
     }

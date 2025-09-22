@@ -23,6 +23,9 @@ const TYPES = {
   OrderService: Symbol.for('OrderService'),
   OrderController: Symbol.for('OrderController'),
 
+  // Locker slot
+  LockerSlotRepository: Symbol.for('LockerSlotRepository'),
+
   // uploand
   ImageUploadService: Symbol.for('ImageUploadService')
 }
