@@ -5,10 +5,14 @@ import http from 'http'
 import { StatusCodes } from 'http-status-codes'
 import morgan from 'morgan'
 import path from 'path'
-import socketIo from 'socket.io'
+import { Server as SocketIOServer } from 'socket.io'
 
 import { errorHandler } from '@/common/middleware/error-handling.middleware'
 import { ENV } from '@/config/config'
+import { container } from '@/di/container'
+import TYPES from '@/di/types'
+import { MQTTService } from '@/services/mqtt.service'
+import SocketService from '@/services/socket.service'
 
 import { ApiError } from '../common/responses/api-error'
 import { AppDataSource } from '../config/mysql'
@@ -18,14 +22,14 @@ import routes from '../routes/index'
 class App {
   public app: Application
   public server: http.Server
-  public io: socketIo.Server
-  private socketClients: Map<number, string>
+  public io: SocketIOServer
 
   constructor() {
     this.app = express()
     this.server = http.createServer(this.app)
-    this.io = new socketIo.Server(this.server, { cors: { origin: '*' } })
-    this.socketClients = new Map()
+    this.io = new SocketIOServer(this.server, { cors: { origin: '*' } })
+
+    container.get<MQTTService>(TYPES.MQTTService)
     this.plugins()
     this.databaseSync()
     this.cacheConnect()
@@ -65,18 +69,8 @@ class App {
   }
 
   private initSocketIo(): void {
-    this.app.set('socket', this.io)
-    this.app.set('socketClients', this.socketClients)
-    this.io.on('connection', (socket: socketIo.Socket) => {
-      let userId: number
-      if (socket.handshake.query.userId) {
-        userId = +socket.handshake.query.userId
-      }
-      this.socketClients.set(userId!, socket.id)
-      socket.on('disconnect', () => {
-        this.socketClients.delete(userId)
-      })
-    })
+    container.bind<SocketIOServer>(TYPES.SocketServer).toConstantValue(this.io)
+    container.get<SocketService>(TYPES.SocketService)
   }
 
   private catchError(): void {
@@ -87,4 +81,4 @@ class App {
   }
 }
 
-export default new App().app
+export default new App()
