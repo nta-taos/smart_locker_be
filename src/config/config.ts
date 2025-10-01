@@ -11,7 +11,9 @@ export const REDIS_CONFIG = {
   host: process.env.REDIS_HOST || '127.0.0.1',
   port: Number(process.env.REDIS_PORT) || 6379,
   password: process.env.REDIS_PASS || undefined,
-  db: Number(process.env.REDIS_DB) || 0
+  db: Number(process.env.REDIS_DB) || 0,
+  defaultTTL: Number(process.env.REDIS_TTL) || 3600,
+  maxRetry: Number(process.env.REDIS_MAX_RETRY) || 5
 }
 
 export const MYSQL_CONFIG = {

@@ -5,21 +5,25 @@ import { CacheKeys } from '@/common/constants/cache-keys'
 import { ErrorMessages } from '@/common/constants/messages'
 import { ApiError } from '@/common/responses'
 import { toUserDTO } from '@/common/utils/user.helper'
-import { redisService } from '@/config/redis'
 import TYPES from '@/di/types'
 import { UserDTO } from '@/dtos/user.dto'
 import { User } from '@/entities/user.model'
 import { UserRepository } from '@/repositories/user.repository'
 
+import { RedisService } from './redis.service'
+
 @injectable()
 export class UserService {
-  constructor(@inject(TYPES.UserRepository) private readonly userRepository: UserRepository) {
+  constructor(
+    @inject(TYPES.UserRepository) private readonly userRepository: UserRepository,
+    @inject(TYPES.RedisService) private readonly redisService: RedisService
+  ) {
     autoBind(this)
   }
 
   async getUserById(id: number): Promise<UserDTO> {
     // get cache
-    const cachedUser = await redisService.safeGetCache<UserDTO>(CacheKeys.USER(id))
+    const cachedUser = await this.redisService.safeGetCache<UserDTO>(CacheKeys.USER(id))
     if (cachedUser) {
       return cachedUser
     }
@@ -32,12 +36,12 @@ export class UserService {
 
     // convert + set cache
     const userDto = toUserDTO(foundUser)
-    await redisService.safeSetCache(CacheKeys.USER(userDto.id), userDto)
+    await this.redisService.safeSetCache(CacheKeys.USER(userDto.id), userDto)
     return userDto
   }
 
   async updateUser(id: number, name?: string, avatarUrl?: string): Promise<UserDTO> {
-    let userDto = await redisService.safeGetCache<UserDTO>(CacheKeys.USER(id))
+    let userDto = await this.redisService.safeGetCache<UserDTO>(CacheKeys.USER(id))
 
     let foundUser: User | null = null
     if (!userDto) {
@@ -70,7 +74,7 @@ export class UserService {
     }
 
     const updatedUserDto = toUserDTO(savedUser)
-    await redisService.safeSetCache(CacheKeys.USER(updatedUserDto.id), updatedUserDto)
+    await this.redisService.safeSetCache(CacheKeys.USER(updatedUserDto.id), updatedUserDto)
     return updatedUserDto
   }
 }

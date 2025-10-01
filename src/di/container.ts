@@ -15,6 +15,7 @@ import { BuildingService } from '@/services/building.service'
 import { ImageUploadService } from '@/services/image-upload.service'
 import { MQTTService } from '@/services/mqtt.service'
 import { OrderService } from '@/services/order.service'
+import { RedisService } from '@/services/redis.service'
 import SocketService from '@/services/socket.service'
 import { UserService } from '@/services/user.service'
 import { WalletTransactionService } from '@/services/wallet-transaction.service'
@@ -62,5 +63,8 @@ container.bind<typeof MQTT_CONFIG>(TYPES.MQTTConfig).toConstantValue(MQTT_CONFIG
 
 // bind service
 container.bind<MQTTService>(TYPES.MQTTService).to(MQTTService).inSingletonScope()
+
+// bind redis
+container.bind<RedisService>(TYPES.RedisService).to(RedisService).inSingletonScope()
 
 export { container }

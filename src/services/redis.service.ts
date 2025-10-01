@@ -1,14 +1,15 @@
+import { injectable } from 'inversify'
 import Redis from 'ioredis'
 
-import { REDIS_CONFIG } from './config'
+import { REDIS_CONFIG } from '@/config/config'
 
-class RedisService {
-  private static instance: RedisService
+@injectable()
+export class RedisService {
   private client: Redis
-  private defaultTTL = 3600
-  private maxRetry = 5
+  private defaultTTL = REDIS_CONFIG.defaultTTL
+  private maxRetry = REDIS_CONFIG.maxRetry
 
-  private constructor() {
+  constructor() {
     this.client = new Redis({
       host: REDIS_CONFIG.host,
       port: REDIS_CONFIG.port,
@@ -21,18 +22,11 @@ class RedisService {
       }
     })
 
-    this.client.on('connect', () => console.log('Redis connected'))
-    this.client.on('ready', () => console.log('Redis ready'))
+    this.client.on('connect', () => console.log('✅ Redis connected'))
+    this.client.on('ready', () => console.log('✅ Redis ready'))
     this.client.on('error', (err) => console.error('Redis error', err))
     this.client.on('close', () => console.log('Redis connection closed'))
     this.client.on('reconnecting', (times: number) => console.log(`Redis reconnecting, attempt #${times}`))
-  }
-
-  public static getInstance(): RedisService {
-    if (!RedisService.instance) {
-      RedisService.instance = new RedisService()
-    }
-    return RedisService.instance
   }
 
   async setCache(key: string, value: unknown, ttlSeconds?: number) {
@@ -54,16 +48,12 @@ class RedisService {
     await this.client.del(key)
   }
 
-  async safeSetCache(key: string, value: unknown, ttlSeconds?: number) {
-    try {
-      await this.setCache(key, value, ttlSeconds)
-    } catch (err) {
-      console.error(`Redis safeSetCache error for key "${key}":`, err)
-    }
-  }
-
   async safeGetCache<T>(key: string): Promise<T | null> {
     try {
+      if (this.client.status !== 'ready') {
+        console.warn(`⚠️ Redis not ready (status=${this.client.status}), skip getCache for key "${key}"`)
+        return null
+      }
       return await this.getCache<T>(key)
     } catch (err) {
       console.error(`Redis safeGetCache error for key "${key}":`, err)
@@ -71,9 +61,19 @@ class RedisService {
     }
   }
 
+  async safeSetCache(key: string, value: unknown, ttlSeconds?: number) {
+    try {
+      if (this.client.status !== 'ready') {
+        console.warn(`⚠️ Redis not ready (status=${this.client.status}), skip setCache for key "${key}"`)
+        return
+      }
+      await this.setCache(key, value, ttlSeconds)
+    } catch (err) {
+      console.error(`Redis safeSetCache error for key "${key}":`, err)
+    }
+  }
+
   getClient() {
     return this.client
   }
 }
-
-export const redisService = RedisService.getInstance()

@@ -51,10 +51,10 @@ export class MQTTService {
       console.log('✅ MQTT connected')
       this.publish('backend/status', { online: true, timestamp: Date.now() })
       this.reconnectAttempts = 0
-      this.subscribeToTopics()
+      // this.subscribeToTopics()
     })
 
-    this.client.on('error', (err: Error) => console.error('MQTT error', err))
+    this.client.on('error', (err: Error) => console.error('❌ MQTT error', err))
     this.client.on('close', () => console.log('MQTT connection closed'))
     this.client.on('reconnect', () => {
       this.reconnectAttempts++

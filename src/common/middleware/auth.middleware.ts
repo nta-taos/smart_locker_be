@@ -3,9 +3,9 @@ import jwt from 'jsonwebtoken'
 
 import { ApiError } from '@/common/responses/api-error'
 import { JWT_CONFIG } from '@/config/config'
-import { redisService } from '@/config/redis'
 import { container } from '@/di/container'
 import TYPES from '@/di/types'
+import { RedisService } from '@/services/redis.service'
 import { UserService } from '@/services/user.service'
 
 import { CacheKeys } from '../constants/cache-keys'
@@ -20,6 +20,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       throw ApiError.unauthorized(ErrorMessages.TOKEN_REQUIRED)
     }
 
+    const redisService = container.get<RedisService>(TYPES.RedisService)
     const isRevoked = await redisService.safeGetCache(CacheKeys.BLACKLIST_TOKEN(token))
     if (isRevoked) {
       throw ApiError.unauthorized(ErrorMessages.TOKEN_REVOKED)

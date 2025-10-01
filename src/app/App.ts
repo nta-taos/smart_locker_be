@@ -12,11 +12,11 @@ import { ENV } from '@/config/config'
 import { container } from '@/di/container'
 import TYPES from '@/di/types'
 import { MQTTService } from '@/services/mqtt.service'
+import { RedisService } from '@/services/redis.service'
 import SocketService from '@/services/socket.service'
 
 import { ApiError } from '../common/responses/api-error'
 import { AppDataSource } from '../config/mysql'
-import { redisService } from '../config/redis'
 import routes from '../routes/index'
 
 class App {
@@ -29,9 +29,9 @@ class App {
     this.server = http.createServer(this.app)
     this.io = new SocketIOServer(this.server, { cors: { origin: '*' } })
 
-    container.get<MQTTService>(TYPES.MQTTService)
-    this.plugins()
     this.databaseSync()
+    this.plugins()
+    this.mqttConnect()
     this.cacheConnect()
     this.initSocketIo()
     this.routes()
@@ -40,16 +40,16 @@ class App {
 
   private async databaseSync(): Promise<void> {
     AppDataSource.initialize()
-      .then(() => console.log('Database connected!'))
+      .then(() => console.log('✅ Database connected!'))
       .catch((err) => console.error('Error connecting to DB', err))
   }
 
   private async cacheConnect(): Promise<void> {
-    try {
-      await redisService
-    } catch (error) {
-      console.error('❌ Redis connection error:', error)
-    }
+    container.get<RedisService>(TYPES.RedisService)
+  }
+
+  private async mqttConnect(): Promise<void> {
+    container.get<MQTTService>(TYPES.MQTTService)
   }
 
   private routes(): void {
