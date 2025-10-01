@@ -7,7 +7,6 @@ import { ErrorMessages } from '@/common/constants/messages'
 import { ApprovalStatus, UserRole } from '@/common/enum/role.enum'
 import { ApiError } from '@/common/responses'
 import { toUserDTO } from '@/common/utils/user.helper'
-import { redisService } from '@/config/redis'
 import TYPES from '@/di/types'
 import { UserDTO } from '@/dtos/user.dto'
 import { User } from '@/entities/user.model'
@@ -15,11 +14,14 @@ import { Wallet } from '@/entities/wallet.model'
 import { BuildingRepository } from '@/repositories/building.repository'
 import { UserRepository } from '@/repositories/user.repository'
 
+import { RedisService } from './redis.service'
+
 @injectable()
 export class AuthService {
   constructor(
     @inject(TYPES.UserRepository) private readonly userRepository: UserRepository,
-    @inject(TYPES.BuildingRepository) private readonly buildingRepository: BuildingRepository
+    @inject(TYPES.BuildingRepository) private readonly buildingRepository: BuildingRepository,
+    @inject(TYPES.RedisService) private readonly redisService: RedisService
   ) {
     autoBind(this)
   }
@@ -72,7 +74,7 @@ export class AuthService {
 
     // set cache
     const userDto = toUserDTO(savedUser)
-    await redisService.safeSetCache(CacheKeys.USER(userDto.id), userDto)
+    await this.redisService.safeSetCache(CacheKeys.USER(userDto.id), userDto)
     return userDto
   }
 
@@ -84,7 +86,7 @@ export class AuthService {
 
     // set cache
     const userDto = toUserDTO(user)
-    await redisService.safeSetCache(CacheKeys.USER(userDto.id), userDto)
+    await this.redisService.safeSetCache(CacheKeys.USER(userDto.id), userDto)
     return userDto
   }
 
@@ -100,7 +102,7 @@ export class AuthService {
 
     // set cache
     const userDto = toUserDTO(user)
-    await redisService.safeSetCache(CacheKeys.USER(userDto.id), userDto)
+    await this.redisService.safeSetCache(CacheKeys.USER(userDto.id), userDto)
     return userDto
   }
 }

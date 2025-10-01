@@ -4,7 +4,7 @@ import { configDotenv } from 'dotenv'
 
 import App from './app/App'
 
-const PORT = (process.env.PORT || 3001) as number
+const PORT = (process.env.PORT || 3000) as number
 configDotenv()
 
 process.on('uncaughtException', (err) => {
