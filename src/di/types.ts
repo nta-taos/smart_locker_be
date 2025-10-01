@@ -27,7 +27,15 @@ const TYPES = {
   LockerSlotRepository: Symbol.for('LockerSlotRepository'),
 
   // uploand
-  ImageUploadService: Symbol.for('ImageUploadService')
+  ImageUploadService: Symbol.for('ImageUploadService'),
+
+  // Socket
+  SocketService: Symbol.for('SocketService'),
+  SocketServer: Symbol.for('SocketServer'),
+
+  // MQTT
+  MQTTService: Symbol.for('MQTTService'),
+  MQTTConfig: Symbol.for('MQTTConfig')
 }
 
 export default TYPES

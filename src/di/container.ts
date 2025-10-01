@@ -1,5 +1,6 @@
 import { Container } from 'inversify'
 
+import { MQTT_CONFIG } from '@/config/config'
 import { AuthController } from '@/controllers/auth.controller'
 import { BuildingController } from '@/controllers/building.controller'
 import { OrderController } from '@/controllers/order.controller'
@@ -12,7 +13,9 @@ import { WalletTransactionRepository } from '@/repositories/wallet-transaction.r
 import { AuthService } from '@/services/auth.service'
 import { BuildingService } from '@/services/building.service'
 import { ImageUploadService } from '@/services/image-upload.service'
+import { MQTTService } from '@/services/mqtt.service'
 import { OrderService } from '@/services/order.service'
+import SocketService from '@/services/socket.service'
 import { UserService } from '@/services/user.service'
 import { WalletTransactionService } from '@/services/wallet-transaction.service'
 
@@ -50,5 +53,14 @@ container.bind<ImageUploadService>(TYPES.ImageUploadService).to(ImageUploadServi
 
 // Bind locker slot dependencies
 container.bind<LockerSlotRepository>(TYPES.LockerSlotRepository).to(LockerSlotRepository)
+
+// Bind SocketService
+container.bind<SocketService>(TYPES.SocketService).to(SocketService).inSingletonScope()
+
+// bind config
+container.bind<typeof MQTT_CONFIG>(TYPES.MQTTConfig).toConstantValue(MQTT_CONFIG)
+
+// bind service
+container.bind<MQTTService>(TYPES.MQTTService).to(MQTTService).inSingletonScope()
 
 export { container }
