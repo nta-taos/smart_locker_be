@@ -6,11 +6,12 @@ import { container } from '@/di/container'
 import TYPES from '@/di/types'
 import { LoginDto, RegisterDto } from '@/dtos/auth.dto'
 
-const authRouter = Router()
+export default function createAuthRouter(): Router {
+  const router = Router()
+  const authController = container.get<AuthController>(TYPES.AuthController)
 
-const authController = container.get<AuthController>(TYPES.AuthController)
+  router.post('/register', validationMiddleware(RegisterDto), authController.register)
+  router.post('/login', validationMiddleware(LoginDto), authController.login)
 
-authRouter.post('/register', validationMiddleware(RegisterDto), authController.register)
-authRouter.post('/login', validationMiddleware(LoginDto), authController.login)
-
-export default authRouter
+  return router
+}

@@ -7,15 +7,16 @@ import { container } from '@/di/container'
 import TYPES from '@/di/types'
 import { CreateOrderShipperDto, CreateOrderUserDto, GetOrdersQueryDto } from '@/dtos/order.dto'
 
-const orderRouter = Router()
+export default function createOrderRouter(): Router {
+  const router = Router()
+  const orderController = container.get<OrderController>(TYPES.OrderController)
 
-const orderController = container.get<OrderController>(TYPES.OrderController)
+  router.use(authMiddleware)
+  router.get('/', validationMiddleware(GetOrdersQueryDto, 'query'), orderController.getMyOrders)
+  router.get('/stats/last-7-days', orderController.getStats)
 
-orderRouter.use(authMiddleware)
-orderRouter.get('/', validationMiddleware(GetOrdersQueryDto, 'query'), orderController.getMyOrders)
-orderRouter.get('/stats/last-7-days', orderController.getStats)
+  router.post('/user', validationMiddleware(CreateOrderUserDto), orderController.createOrderUser)
+  router.post('/shipper', validationMiddleware(CreateOrderShipperDto), orderController.createOrderShipper)
 
-orderRouter.post('/user', validationMiddleware(CreateOrderUserDto), orderController.createOrderUser)
-orderRouter.post('/shipper', validationMiddleware(CreateOrderShipperDto), orderController.createOrderShipper)
-
-export default orderRouter
+  return router
+}

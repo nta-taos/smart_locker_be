@@ -7,35 +7,35 @@ import { SlotStatus } from '@/common/enum/locker-slot.enum'
 import { LockerStatus } from '@/common/enum/locker.enum'
 import { OrderStatus, OrderType, PaymentStatus } from '@/common/enum/order.enum'
 import { ApiError } from '@/common/responses'
-import { calculateFee } from '@/common/utils/helpers'
 import { AppDataSource } from '@/config/mysql'
 import TYPES from '@/di/types'
+import { toOrderDTO } from '@/dtos/order.dto'
 import { LockerSlot } from '@/entities/locker-slot.model'
 import { Order } from '@/entities/order.model'
 import { LockerSlotRepository } from '@/repositories/locker-slot.repository'
 import { OrderRepository } from '@/repositories/order.repository'
 import { UserRepository } from '@/repositories/user.repository'
 
+import SocketService from './socket.service'
+
 @injectable()
 export class OrderService {
   constructor(
     @inject(TYPES.OrderRepository) private readonly orderRepository: OrderRepository,
     @inject(TYPES.LockerSlotRepository) private readonly lockerSlotRepository: LockerSlotRepository,
-    @inject(TYPES.UserRepository) private readonly userRepository: UserRepository
+    @inject(TYPES.UserRepository) private readonly userRepository: UserRepository,
+    @inject(TYPES.SocketService) private readonly socketService: SocketService
   ) {
     autoBind(this)
   }
 
   async getOrdersByUserId(userId: number, status: string = 'all', page: number = 1, limit: number = 6) {
-    const whereCondition: FindOptionsWhere<Order> = {
-      sender: { id: userId },
-      receiver: { id: userId }
-    }
+    let whereCondition: FindOptionsWhere<Order>[] = [{ sender: { id: userId } }, { receiver: { id: userId } }]
 
     if (status === 'pending') {
-      whereCondition.status = OrderStatus.PENDING
+      whereCondition = whereCondition.map((cond) => ({ ...cond, status: OrderStatus.PENDING }))
     } else if (status === 'received') {
-      whereCondition.status = OrderStatus.RECEIVED
+      whereCondition = whereCondition.map((cond) => ({ ...cond, status: OrderStatus.RECEIVED }))
     }
 
     const { data, total } = await this.orderRepository.findAndCount({
@@ -43,49 +43,15 @@ export class OrderService {
       relations: ['sender', 'receiver', 'lockerSlot'],
       order: { start_time: 'DESC' },
       skip: (page - 1) * limit,
-      take: limit,
-      select: {
-        id: true,
-        order_code: true,
-        start_time: true,
-        end_time: true,
-        status: true,
-        receiver_phone: true,
-        fee: true,
-        type: true,
-        payment_status: true,
-        sender: {
-          id: true,
-          name: true,
-          phone: true,
-          avatar: true,
-          role: true
-        },
-        receiver: {
-          id: true,
-          name: true,
-          phone: true,
-          avatar: true,
-          role: true
-        },
-        lockerSlot: {
-          id: true,
-          size: true
-        }
-      }
+      take: limit
     })
-
-    const order = data.map((o) => ({
-      ...o,
-      fee: o.fee ? o.fee : calculateFee(o.hours, o.type),
-      hours: o.hours
-    }))
+    const orders = data.map(toOrderDTO)
     return {
       page,
       limit,
       total,
       totalPages: Math.ceil(total / limit),
-      data: order
+      data: orders
     }
   }
   async getOrdersByShipperId(shipperId: number, status: string = 'all', page: number = 1, limit: number = 6) {
@@ -104,39 +70,17 @@ export class OrderService {
       relations: ['sender', 'receiver', 'lockerSlot'],
       order: { start_time: 'DESC' },
       skip: (page - 1) * limit,
-      take: limit,
-      select: {
-        id: true,
-        order_code: true,
-        start_time: true,
-        receiver_phone: true,
-        sender: {
-          id: true,
-          name: true,
-          phone: true,
-          avatar: true,
-          role: true
-        },
-        receiver: {
-          id: true,
-          name: true,
-          phone: true,
-          avatar: true,
-          role: true
-        },
-        lockerSlot: {
-          id: true,
-          size: true
-        }
-      }
+      take: limit
     })
+
+    const orders = data.map(toOrderDTO)
 
     return {
       page,
       limit,
       total,
       totalPages: Math.ceil(total / limit),
-      data: data
+      data: orders
     }
   }
 
@@ -200,10 +144,21 @@ export class OrderService {
         payment_status: PaymentStatus.UNPAID
       })
 
-      await manager.save(order)
+      const savedOrder = await manager.save(order)
+      const orderLite = toOrderDTO(savedOrder)
 
       lockerSlot.status = SlotStatus.OCCUPIED
-      await manager.save(lockerSlot)
+      const newLockerSlot = await manager.save(lockerSlot)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { locker, ...slotOnly } = newLockerSlot
+
+      if (user.building?.isPublic) {
+        this.socketService.emitToAll('slot:updated', slotOnly)
+      } else {
+        this.socketService.emitToRoom('shipper', 'slot:updated', slotOnly)
+        this.socketService.emitToRoom(`building:${user.building?.id}`, 'slot:updated', slotOnly)
+      }
+      this.socketService.emitToUser(userId, 'order:created', orderLite)
 
       return order
     })
@@ -263,10 +218,27 @@ export class OrderService {
         payment_status: PaymentStatus.UNPAID
       })
 
-      await manager.save(order)
+      const savedOrder = await manager.save(order)
+      const orderLite = toOrderDTO(savedOrder)
 
       lockerSlot.status = SlotStatus.OCCUPIED
-      await manager.save(lockerSlot)
+      const newLockerSlot = await manager.save(lockerSlot)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { locker, ...slotOnly } = newLockerSlot
+
+      // emit order for receiver and sender
+      if (orderLite.receiver?.id) {
+        this.socketService.emitToUser(orderLite.receiver?.id, 'order:created', orderLite)
+      }
+      this.socketService.emitToUser(orderLite.sender?.id, 'order:created', orderLite)
+
+      // emit state locket-slot
+      if (lockerSlot.locker.building?.isPublic) {
+        this.socketService.emitToAll('slot:updated', slotOnly)
+      } else {
+        this.socketService.emitToRoom('shipper', 'slot:updated', slotOnly)
+        this.socketService.emitToRoom(`building:${lockerSlot.locker.building?.id}`, 'slot:updated', slotOnly)
+      }
 
       return order
     })

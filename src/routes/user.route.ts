@@ -8,17 +8,14 @@ import TYPES from '@/di/types'
 import { UpdateUserDto } from '@/dtos/user.dto'
 import { ImageUploadService } from '@/services/image-upload.service'
 
-const userRouter = Router()
+export default function createUserRouter(): Router {
+  const router = Router()
 
-const userController = container.get<UserController>(TYPES.UserController)
-const uploadService = container.get<ImageUploadService>(TYPES.ImageUploadService)
+  const userController = container.get<UserController>(TYPES.UserController)
+  const uploadService = container.get<ImageUploadService>(TYPES.ImageUploadService)
 
-userRouter.use(authMiddleware)
-userRouter.put(
-  '/',
-  uploadService.upload.single('avatar'),
-  validationMiddleware(UpdateUserDto),
-  userController.updateUser
-)
+  router.use(authMiddleware)
+  router.put('/', uploadService.upload.single('avatar'), validationMiddleware(UpdateUserDto), userController.updateUser)
 
-export default userRouter
+  return router
+}

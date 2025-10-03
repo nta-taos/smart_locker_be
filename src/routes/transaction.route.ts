@@ -7,15 +7,12 @@ import { container } from '@/di/container'
 import TYPES from '@/di/types'
 import { TransactionQueryDto } from '@/dtos/transaction.dto'
 
-const transactionRouter = Router()
+export default function createTransactionRouter(): Router {
+  const router = Router()
+  const walletTransactionController = container.get<WalletTransactionController>(TYPES.WalletTransactionController)
 
-const walletTransactionController = container.get<WalletTransactionController>(TYPES.WalletTransactionController)
+  router.use(authMiddleware)
+  router.get('/', validationMiddleware(TransactionQueryDto, 'query'), walletTransactionController.getTransactions)
 
-transactionRouter.use(authMiddleware)
-transactionRouter.get(
-  '/',
-  validationMiddleware(TransactionQueryDto, 'query'),
-  walletTransactionController.getTransactions
-)
-
-export default transactionRouter
+  return router
+}

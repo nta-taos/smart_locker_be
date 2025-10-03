@@ -1,17 +1,19 @@
 import { Router } from 'express'
 
-import authRouter from './auth.route'
-import buildingRouter from './building.route'
-import orderRouter from './order.route'
-import transactionRouter from './transaction.route'
-import userRouter from './user.route'
+import createAuthRouter from './auth.route'
+import createBuildingRouter from './building.route'
+import createOrderRouter from './order.route'
+import createTransactionRouter from './transaction.route'
+import createUserRouter from './user.route'
 
-const routes = Router()
+export default function createRoutes(): Router {
+  const routes = Router()
 
-routes.use('/transactions', transactionRouter)
-routes.use('/auth', authRouter)
-routes.use('/buildings', buildingRouter)
-routes.use('/orders', orderRouter)
-routes.use('/users', userRouter)
+  routes.use('/transactions', createTransactionRouter())
+  routes.use('/auth', createAuthRouter())
+  routes.use('/buildings', createBuildingRouter())
+  routes.use('/orders', createOrderRouter())
+  routes.use('/users', createUserRouter())
 
-export default routes
+  return routes
+}
