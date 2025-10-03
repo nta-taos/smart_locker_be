@@ -17,7 +17,7 @@ import SocketService from '@/services/socket.service'
 
 import { ApiError } from '../common/responses/api-error'
 import { AppDataSource } from '../config/mysql'
-import routes from '../routes/index'
+import createRoutes from '../routes/index'
 
 class App {
   public app: Application
@@ -53,7 +53,7 @@ class App {
   }
 
   private routes(): void {
-    this.app.use('/api', routes)
+    this.app.use('/api', createRoutes())
     this.app.use('/uploads', express.static(path.join(__dirname, '../../uploads')))
   }
 

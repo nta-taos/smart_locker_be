@@ -4,10 +4,11 @@ import { BuildingController } from '@/controllers/building.controller'
 import { container } from '@/di/container'
 import TYPES from '@/di/types'
 
-const buildingRouter = Router()
+export default function createBuildingRouter(): Router {
+  const router = Router()
+  const buildingController = container.get<BuildingController>(TYPES.BuildingController)
 
-const buildingController = container.get<BuildingController>(TYPES.BuildingController)
+  router.get('/', buildingController.getAccessibleBuildings)
 
-buildingRouter.get('/', buildingController.getAccessibleBuildings)
-
-export default buildingRouter
+  return router
+}
