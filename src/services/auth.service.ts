@@ -26,14 +26,7 @@ export class AuthService {
     autoBind(this)
   }
 
-  async register(
-    phone: string,
-    name: string,
-    email: string,
-    password: string,
-    buildingId?: number,
-    role?: number
-  ): Promise<UserDTO> {
+  async register(phone: string, name: string, email: string, password: string): Promise<UserDTO> {
     const [existingByPhone, existingByEmail, hashedPassword] = await Promise.all([
       this.userRepository.findByPhone(phone),
       this.userRepository.findByEmail(email),
@@ -48,16 +41,8 @@ export class AuthService {
     newUser.name = name
     newUser.email = email
     newUser.password = hashedPassword
-    newUser.role = role ? role : UserRole.USER
+    newUser.role = UserRole.USER
     newUser.approval_status = ApprovalStatus.PENDING
-
-    if (buildingId) {
-      const building = await this.buildingRepository.findById(buildingId)
-      if (!building) {
-        throw ApiError.notFound(ErrorMessages.BUILDING_NOT_FOUND)
-      }
-      newUser.building = building
-    }
 
     const newWallet = new Wallet()
     newUser.wallet = newWallet

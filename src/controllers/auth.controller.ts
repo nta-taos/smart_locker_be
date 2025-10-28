@@ -16,9 +16,9 @@ export class AuthController {
 
   async register(req: Request, res: Response, next: NextFunction) {
     try {
-      const { phone, name, email, password, buildingId, role } = req.body
+      const { phone, name, email, password } = req.body
 
-      const user = await this.authService.register(phone, name, email, password, buildingId, role)
+      const user = await this.authService.register(phone, name, email, password)
 
       const token = signToken({
         sub: user.id.toString(),
