@@ -1,11 +1,14 @@
 import autoBind from 'auto-bind'
 import { compare, hash } from 'bcryptjs'
+import { OAuth2Client } from 'google-auth-library'
+import { StatusCodes } from 'http-status-codes'
 import { injectable, inject } from 'inversify'
 
 import { CacheKeys } from '@/common/constants/cache-keys'
 import { ErrorMessages } from '@/common/constants/messages'
 import { ApprovalStatus, UserRole } from '@/common/enum/role.enum'
 import { ApiError } from '@/common/responses'
+import { signToken } from '@/common/utils/jwt'
 import { toUserDTO } from '@/common/utils/user.helper'
 import TYPES from '@/di/types'
 import { UserDTO } from '@/dtos/user.dto'
@@ -16,6 +19,7 @@ import { UserRepository } from '@/repositories/user.repository'
 
 import { RedisService } from './redis.service'
 
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 @injectable()
 export class AuthService {
   constructor(
@@ -77,7 +81,7 @@ export class AuthService {
 
   async checkPass(phone: string, password: string): Promise<UserDTO> {
     const user = await this.userRepository.findOneByCondition({ phone: phone }, { relations: ['building', 'wallet'] })
-    if (!user) {
+    if (!user || !user.password) {
       throw ApiError.notFound(ErrorMessages.LOGIN_FAILED)
     }
     const isMatch = await compare(password, user.password)
@@ -89,5 +93,99 @@ export class AuthService {
     const userDto = toUserDTO(user)
     await this.redisService.safeSetCache(CacheKeys.USER(userDto.id), userDto)
     return userDto
+  }
+
+  /**
+   * Xác thực Google idToken, kiểm tra DB và trả về 1 trong 2 kịch bản
+   * @param idToken Token lấy từ FE
+   */
+  async verifyGoogleToken(idToken: string) {
+    let payload
+    try {
+      const ticket = await client.verifyIdToken({
+        idToken: idToken,
+        audience: process.env.GOOGLE_CLIENT_ID
+      })
+      payload = ticket.getPayload()
+
+      if (!payload || !payload.email) {
+        throw new Error('Invalid Google token payload')
+      }
+    } catch {
+      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Google token không hợp lệ.')
+    }
+
+    const { email, name, picture, email_verified } = payload
+
+    if (!email_verified) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Email Google chưa được xác thực.')
+    }
+
+    const existingUser = await this.userRepository.findOneByCondition(
+      { email: email_verified ? email : '' },
+      { relations: ['building', 'wallet'] }
+    )
+    if (existingUser) {
+      return {
+        status: 'existing_user',
+        user: existingUser
+      }
+    } else {
+      return {
+        status: 'new_user',
+        email: email,
+        name: name,
+        picture: picture
+      }
+    }
+  }
+
+  async completeGoogleRegistration(idToken: string, phone: string) {
+    let payload
+    try {
+      const ticket = await client.verifyIdToken({
+        idToken: idToken,
+        audience: process.env.GOOGLE_CLIENT_ID
+      })
+      payload = ticket.getPayload()
+      if (!payload || !payload.email) throw new Error()
+    } catch {
+      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Google token không hợp lệ.')
+    }
+
+    const { email, name, picture, email_verified } = payload
+    if (!email_verified) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Email Google chưa được xác thực.')
+    }
+
+    const existingEmail = await this.userRepository.findByEmail(email)
+    if (existingEmail) {
+      throw new ApiError(StatusCodes.CONFLICT, 'Email này đã được đăng ký.')
+    }
+    const existingPhone = await this.userRepository.findByPhone(phone)
+    if (existingPhone) {
+      throw new ApiError(StatusCodes.CONFLICT, 'Số điện thoại này đã được đăng ký.')
+    }
+
+    const newUser = await this.userRepository.createEntity({
+      email: email,
+      name: name,
+      avatar: picture,
+      phone: phone,
+      password: null,
+      role: UserRole.USER,
+      wallet: new Wallet()
+    })
+
+    const savedUser = await this.userRepository.findOneByCondition(
+      { id: newUser.id },
+      { relations: ['building', 'wallet'] }
+    )
+
+    const token = signToken({
+      sub: newUser.id.toString(),
+      role: newUser.role
+    })
+    return { user: savedUser, token }
   }
 }
