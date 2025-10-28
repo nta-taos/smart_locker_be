@@ -24,6 +24,13 @@ export class Locker extends BaseModel {
   })
   status!: number
 
+  @Column({
+    type: 'int',
+    nullable: true,
+    comment: 'Số tầng đặt tủ (1, 2, -1 cho tầng hầm)'
+  })
+  floor!: number | null
+
   @OneToMany(() => LockerSlot, (slot) => slot.locker)
   slots!: LockerSlot[]
 }

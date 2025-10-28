@@ -4,7 +4,6 @@ import { injectable, inject } from 'inversify'
 
 import { SuccessMessages } from '@/common/constants/messages'
 import { ApiSuccess } from '@/common/responses'
-import { getUserIdFromHeader } from '@/common/utils/helpers'
 import TYPES from '@/di/types'
 import { BuildingService } from '@/services/building.service'
 
@@ -14,10 +13,9 @@ export class BuildingController {
     autoBind(this)
   }
 
-  async getAccessibleBuildings(req: Request, res: Response, next: NextFunction) {
+  async getAllBuildings(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = getUserIdFromHeader(req)
-      const buildings = await this.buildingService.getAccessibleBuildings(userId)
+      const buildings = await this.buildingService.getAllBuildings()
       return ApiSuccess.ok(buildings, SuccessMessages.BUILDING_PUBLIC_RETRIEVED).send(res)
     } catch (err) {
       next(err)
