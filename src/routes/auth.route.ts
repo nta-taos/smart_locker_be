@@ -12,6 +12,8 @@ export default function createAuthRouter(): Router {
 
   router.post('/register', validationMiddleware(RegisterDto), authController.register)
   router.post('/login', validationMiddleware(LoginDto), authController.login)
+  router.post('/google-check', authController.googleCheck)
+  router.post('/google-register-complete', authController.googleRegisterComplete)
 
   return router
 }
