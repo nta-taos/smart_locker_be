@@ -8,7 +8,7 @@ export default function createBuildingRouter(): Router {
   const router = Router()
   const buildingController = container.get<BuildingController>(TYPES.BuildingController)
 
-  router.get('/', buildingController.getAccessibleBuildings)
+  router.get('/', buildingController.getAllBuildings)
 
   return router
 }
