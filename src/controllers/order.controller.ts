@@ -2,10 +2,11 @@ import autoBind from 'auto-bind'
 import { NextFunction, Request, Response } from 'express'
 import { injectable, inject } from 'inversify'
 
-import { ErrorMessages, SuccessMessages } from '@/common/constants/messages'
+import { SuccessMessages } from '@/common/constants/messages'
 import { UserRole } from '@/common/enum/role.enum'
-import { ApiError, ApiSuccess } from '@/common/responses'
+import { ApiSuccess } from '@/common/responses'
 import TYPES from '@/di/types'
+import { SendPackageDto } from '@/dtos/order.dto'
 import { User } from '@/entities/user.model'
 import { OrderService } from '@/services/order.service'
 
@@ -44,33 +45,16 @@ export class OrderController {
     }
   }
 
-  async createOrderUser(req: Request, res: Response, next: NextFunction) {
+  async sendPackage(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = (req.user as User).id
-      const role = (req.user as User).role
-      if (role !== UserRole.USER) {
-        throw ApiError.unauthorized(ErrorMessages.UNAUTHORIZED)
-      }
-      const { endTime, lockerSlotId } = req.body
-      const order = await this.orderService.createOrderUser(userId, endTime, lockerSlotId)
+      const user = req.user as User
+      const userId = user.id
 
-      return ApiSuccess.ok(order, SuccessMessages.ORDER_CREATED).send(res)
-    } catch (err) {
-      next(err)
-    }
-  }
+      const sendData: SendPackageDto = req.body
 
-  async createOrderShipper(req: Request, res: Response, next: NextFunction) {
-    try {
-      const userId = (req.user as User).id
-      const role = (req.user as User).role
-      if (role !== UserRole.SHIPPER) {
-        throw ApiError.unauthorized(ErrorMessages.UNAUTHORIZED)
-      }
-      const { phone, lockerSlotId, order_code } = req.body
-      const order = await this.orderService.createOrderShpper(userId, phone, lockerSlotId, order_code)
+      const order = await this.orderService.createSendPackageOrder(userId, sendData)
 
-      return ApiSuccess.ok(order, SuccessMessages.ORDER_CREATED).send(res)
+      return ApiSuccess.created(order, SuccessMessages.ORDER_CREATED).send(res)
     } catch (err) {
       next(err)
     }

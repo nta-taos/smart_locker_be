@@ -4,11 +4,8 @@ export enum PaymentStatus {
 }
 
 export enum OrderType {
-  USER_IN_BUILDING = 0,
-  USER_OUT_BUILDING = 1,
-  SHIPPER_TO_USER_IN_BUILDING = 2,
-  SHIPPER_TO_USER_OUT_BUILDING = 3,
-  SHIPPER_TO_GUEST = 4
+  RENT_LOCKER = 0,
+  SEND_PACKAGE = 1
 }
 
 export enum OrderStatus {

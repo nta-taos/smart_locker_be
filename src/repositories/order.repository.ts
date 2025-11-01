@@ -31,14 +31,10 @@ export class OrderRepository extends BaseRepository<Order> implements IOderRepos
   }
 
   async countShipperOrdersLast7Days(userId: number): Promise<Map<string, number>> {
-    return this.countOrdersByDayLast7Days(userId, [
-      OrderType.SHIPPER_TO_GUEST,
-      OrderType.SHIPPER_TO_USER_IN_BUILDING,
-      OrderType.SHIPPER_TO_USER_OUT_BUILDING
-    ])
+    return this.countOrdersByDayLast7Days(userId, [OrderType.SEND_PACKAGE])
   }
 
   async countUserOrdersLast7Days(userId: number): Promise<Map<string, number>> {
-    return this.countOrdersByDayLast7Days(userId, [OrderType.USER_IN_BUILDING, OrderType.USER_OUT_BUILDING])
+    return this.countOrdersByDayLast7Days(userId, [OrderType.RENT_LOCKER])
   }
 }

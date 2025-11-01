@@ -4,6 +4,7 @@ import { ApprovalStatus, UserRole } from '@/common/enum/role.enum'
 
 import { BaseModel } from './base.model'
 import { Building } from './building.model'
+import { Notification } from './notification.model'
 import { Order } from './order.model'
 import { Wallet } from './wallet.model'
 
@@ -59,4 +60,7 @@ export class User extends BaseModel {
 
   @OneToMany(() => Order, (order) => order.receiver)
   receivedOrders!: Order[]
+
+  @OneToMany(() => Notification, (notification) => notification.user)
+  notifications!: Notification[]
 }
