@@ -1,20 +1,28 @@
 import autoBind from 'auto-bind'
+import dayjs from 'dayjs'
 import { injectable, inject } from 'inversify'
-import { FindOptionsWhere } from 'typeorm'
+import { EntityManager, FindOptionsWhere } from 'typeorm'
 
 import { ErrorMessages } from '@/common/constants/messages'
-import { SlotStatus } from '@/common/enum/locker-slot.enum'
+import { SlotPricePerTime, SlotSize, SlotStatus } from '@/common/enum/locker-slot.enum'
 import { LockerStatus } from '@/common/enum/locker.enum'
+import { NotificationType } from '@/common/enum/notification.enum'
 import { OrderStatus, OrderType, PaymentStatus } from '@/common/enum/order.enum'
+import { TransactionType } from '@/common/enum/transaction.enum'
 import { ApiError } from '@/common/responses'
 import { AppDataSource } from '@/config/mysql'
 import TYPES from '@/di/types'
-import { toOrderDTO } from '@/dtos/order.dto'
+import { SendPackageDto, toOrderDTO } from '@/dtos/order.dto'
 import { LockerSlot } from '@/entities/locker-slot.model'
+import { Notification } from '@/entities/notification.model'
 import { Order } from '@/entities/order.model'
+import { User } from '@/entities/user.model'
+import { WalletTransaction } from '@/entities/wallet-transaction.model'
 import { LockerSlotRepository } from '@/repositories/locker-slot.repository'
+import { NotificationRepository } from '@/repositories/notification.repository'
 import { OrderRepository } from '@/repositories/order.repository'
 import { UserRepository } from '@/repositories/user.repository'
+import { WalletTransactionRepository } from '@/repositories/wallet-transaction.repository'
 
 import SocketService from './socket.service'
 
@@ -24,9 +32,19 @@ export class OrderService {
     @inject(TYPES.OrderRepository) private readonly orderRepository: OrderRepository,
     @inject(TYPES.LockerSlotRepository) private readonly lockerSlotRepository: LockerSlotRepository,
     @inject(TYPES.UserRepository) private readonly userRepository: UserRepository,
-    @inject(TYPES.SocketService) private readonly socketService: SocketService
+    @inject(TYPES.SocketService) private readonly socketService: SocketService,
+    @inject(TYPES.WalletTransactionRepository) private readonly transactionRepo: WalletTransactionRepository,
+    @inject(TYPES.NotificationRepository) private readonly notificationRepository: NotificationRepository
   ) {
     autoBind(this)
+  }
+
+  private getPricePerSlotSize(slotSize: number): number {
+    if (!(slotSize in SlotPricePerTime)) {
+      throw ApiError.badRequest(ErrorMessages.INVALID_SLOT_SIZE)
+    }
+
+    return SlotPricePerTime[slotSize as SlotSize]
   }
 
   async getOrdersByUserId(userId: number, status: string = 'all', page: number = 1, limit: number = 6) {
@@ -54,6 +72,7 @@ export class OrderService {
       data: orders
     }
   }
+
   async getOrdersByShipperId(shipperId: number, status: string = 'all', page: number = 1, limit: number = 6) {
     const whereCondition: FindOptionsWhere<Order> = {
       sender: { id: shipperId }
@@ -103,144 +122,138 @@ export class OrderService {
     return results
   }
 
-  async createOrderUser(userId: number, endTime: Date, lockerSlotId: number) {
-    const user = await this.userRepository.findOneByCondition({ id: userId }, { relations: ['building'] })
-    if (!user) {
+  async createSendPackageOrder(userId: number, sendData: SendPackageDto) {
+    const { lockerId, receiveDateTime, orderCode, receiverPhoneNumber, size } = sendData
+
+    const sender = await this.userRepository.findById(userId)
+    if (!sender) {
       throw ApiError.badRequest(ErrorMessages.USER_NOT_FOUND)
     }
+    const receiver = await this.userRepository.findOneByCondition({ phone: receiverPhoneNumber })
 
-    return await AppDataSource.transaction(async (manager) => {
+    const receiveTimeDayjs = dayjs(receiveDateTime)
+    const now = dayjs()
+    const durationHours = receiveTimeDayjs.diff(now, 'hour', true)
+    const MINIMUM_DURATION_HOURS = 1
+
+    if (durationHours < MINIMUM_DURATION_HOURS) {
+      throw ApiError.badRequest(`Thời gian nhận hàng phải tối thiểu sau ${MINIMUM_DURATION_HOURS} giờ kể từ hiện tại.`)
+    }
+    if (receiveTimeDayjs.isBefore(now)) {
+      throw ApiError.badRequest('Thời gian nhận hàng không hợp lệ. Phải là thời gian trong tương lai.')
+    }
+    const billedDurationHours = Number(durationHours.toFixed(2))
+
+    return await AppDataSource.transaction(async (manager: EntityManager) => {
       const lockerSlot = await manager.findOne(LockerSlot, {
-        where: { id: lockerSlotId },
+        where: {
+          locker: { id: lockerId },
+          size: size,
+          status: SlotStatus.EMPTY
+        },
         relations: ['locker', 'locker.building'],
         lock: { mode: 'pessimistic_write' }
       })
 
       if (!lockerSlot) {
-        throw ApiError.notFound(ErrorMessages.SLOT_NOT_FOUND)
+        throw ApiError.notFound('Không tìm thấy slot trống phù hợp với kích thước đã chọn trong tủ này.')
       }
       if (lockerSlot.status !== SlotStatus.EMPTY) {
         throw ApiError.badRequest(ErrorMessages.SLOT_ALREADY_RENTED)
-      }
-      if (!lockerSlot.locker.building.isPublic && lockerSlot.locker.building.id !== user.building?.id) {
-        throw ApiError.badRequest(ErrorMessages.SLOT_PERMISSION_DENIED)
       }
       if (lockerSlot.locker.status !== LockerStatus.Active) {
         throw ApiError.badRequest(ErrorMessages.LOCKER_INACTIVE)
       }
 
+      const pricePerTime = this.getPricePerSlotSize(lockerSlot.size)
+      const totalCost = billedDurationHours * pricePerTime
+
+      const senderWithWallet = await manager.findOne(User, {
+        where: { id: sender.id } as FindOptionsWhere<User>,
+        relations: ['wallet'],
+        lock: { mode: 'pessimistic_write' }
+      })
+
+      if (!senderWithWallet || !senderWithWallet.wallet) {
+        throw ApiError.internal('Không tìm thấy thông tin ví của người dùng.')
+      }
+
+      if (senderWithWallet.wallet.balance < totalCost) {
+        throw ApiError.badRequest(ErrorMessages.INSUFFICIENT_FUNDS)
+      }
+
+      senderWithWallet.wallet.balance -= totalCost
+      await manager.save(senderWithWallet.wallet)
+
+      const walletTransaction = manager.create(WalletTransaction, {
+        type: TransactionType.DEBIT,
+        wallet: senderWithWallet.wallet,
+        amount: totalCost,
+        description: `Thanh toán gửi hàng: ${orderCode} (${billedDurationHours} giờ)`
+      })
+      await manager.save(walletTransaction)
+
       const order = manager.create(Order, {
-        sender: user,
-        receiver: user,
-        receiver_phone: user.phone,
+        sender: sender,
+        order_code: orderCode,
+        receiver: receiver,
+        receiver_phone: receiver?.phone || receiverPhoneNumber,
         lockerSlot,
-        start_time: new Date(),
-        end_time: endTime,
+        start_time: now.toDate(),
+        end_time: receiveTimeDayjs.toDate(),
         status: OrderStatus.PENDING,
-        type:
-          user.building?.id === lockerSlot.locker.building.id
-            ? OrderType.USER_IN_BUILDING
-            : OrderType.USER_OUT_BUILDING,
-        payment_status: PaymentStatus.UNPAID
+        type: OrderType.SEND_PACKAGE,
+        payment_status: PaymentStatus.PAID,
+        fee: totalCost,
+        transaction: walletTransaction
       })
 
       const savedOrder = await manager.save(order)
       const orderLite = toOrderDTO(savedOrder)
 
       lockerSlot.status = SlotStatus.OCCUPIED
-      const newLockerSlot = await manager.save(lockerSlot)
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { locker, ...slotOnly } = newLockerSlot
+      await manager.save(lockerSlot)
 
-      if (user.building?.isPublic) {
-        this.socketService.emitToAll('slot:updated', slotOnly)
-      } else {
-        this.socketService.emitToRoom('shipper', 'slot:updated', slotOnly)
-        this.socketService.emitToRoom(`building:${user.building?.id}`, 'slot:updated', slotOnly)
-      }
-      this.socketService.emitToUser(userId, 'order:created', orderLite)
+      const { ...slotOnly } = lockerSlot
 
-      return order
-    })
-  }
-
-  async createOrderShpper(shipperId: number, phone: string, lockerSlotId: number, order_code: string) {
-    const shipper = await this.userRepository.findById(shipperId)
-    if (!shipper) {
-      throw ApiError.badRequest(ErrorMessages.USER_NOT_FOUND)
-    }
-
-    const user = await this.userRepository.findOneByCondition({ phone }, { relations: ['building'] })
-
-    return await AppDataSource.transaction(async (manager) => {
-      const lockerSlot = await manager.findOne(LockerSlot, {
-        where: { id: lockerSlotId },
-        relations: ['locker', 'locker.building'],
-        lock: { mode: 'pessimistic_write' }
+      const senderNotification = manager.create(Notification, {
+        userId: sender.id,
+        user: sender,
+        type: NotificationType.ORDER_CREATED,
+        title: `Đơn hàng ${orderCode} đã được tạo thành công`,
+        message: `Đơn hàng gửi hàng cho ${receiverPhoneNumber} đã được thanh toán ${totalCost} VND.`,
+        isRead: false,
+        data: { orderCode, totalCost, receiverPhoneNumber, role: 'sender' }
       })
+      await manager.save(senderNotification)
 
-      if (!lockerSlot) {
-        throw ApiError.notFound(ErrorMessages.SLOT_NOT_FOUND)
-      }
-      if (lockerSlot.status !== SlotStatus.EMPTY) {
-        throw ApiError.badRequest(ErrorMessages.SLOT_ALREADY_RENTED)
-      }
-      if (user) {
-        if (!lockerSlot.locker.building.isPublic && lockerSlot.locker.building.id !== user.building?.id) {
-          throw ApiError.badRequest(ErrorMessages.SLOT_PERMISSION_DENIED)
-        }
-      }
-
-      if (!user) {
-        if (!lockerSlot.locker.building.isPublic) {
-          throw ApiError.badRequest(ErrorMessages.SLOT_PERMISSION_DENIED)
-        }
+      if (receiver) {
+        const receiverNotification = manager.create(Notification, {
+          userId: receiver.id,
+          user: receiver,
+          type: NotificationType.ORDER_RECEIVED,
+          title: `Bạn có gói hàng mới từ ${sender.name}`,
+          message: `Bạn có một gói hàng mới tại tủ khóa. Mã đơn hàng: ${orderCode}. Vui lòng nhận hàng trước ${receiveTimeDayjs.format('HH:mm DD/MM')}.`,
+          isRead: false,
+          data: { orderCode, senderPhone: sender.phone, receiveTime: receiveTimeDayjs.toISOString(), role: 'receiver' }
+        })
+        await manager.save(receiverNotification)
       }
 
-      if (lockerSlot.locker.status !== LockerStatus.Active) {
-        throw ApiError.badRequest(ErrorMessages.LOCKER_INACTIVE)
-      }
-
-      const order = manager.create(Order, {
-        sender: shipper,
-        order_code,
-        receiver: user,
-        receiver_phone: user?.phone ? user.phone : phone,
-        lockerSlot,
-        start_time: new Date(),
-        end_time: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-        status: OrderStatus.PENDING,
-        type: user
-          ? user.building?.id === lockerSlot.locker.building.id
-            ? OrderType.SHIPPER_TO_USER_IN_BUILDING
-            : OrderType.SHIPPER_TO_USER_OUT_BUILDING
-          : OrderType.SHIPPER_TO_GUEST,
-        payment_status: PaymentStatus.UNPAID
-      })
-
-      const savedOrder = await manager.save(order)
-      const orderLite = toOrderDTO(savedOrder)
-
-      lockerSlot.status = SlotStatus.OCCUPIED
-      const newLockerSlot = await manager.save(lockerSlot)
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { locker, ...slotOnly } = newLockerSlot
-
-      // emit order for receiver and sender
       if (orderLite.receiver?.id) {
         this.socketService.emitToUser(orderLite.receiver?.id, 'order:created', orderLite)
       }
       this.socketService.emitToUser(orderLite.sender?.id, 'order:created', orderLite)
+      console.log(walletTransaction.wallet)
+      this.socketService.emitToUser(orderLite.sender?.id, 'wallet:updated', walletTransaction.wallet)
 
-      // emit state locket-slot
       if (lockerSlot.locker.building?.isPublic) {
         this.socketService.emitToAll('slot:updated', slotOnly)
       } else {
-        this.socketService.emitToRoom('shipper', 'slot:updated', slotOnly)
-        this.socketService.emitToRoom(`building:${lockerSlot.locker.building?.id}`, 'slot:updated', slotOnly)
+        this.socketService.emitToAll('slot:updated', slotOnly)
       }
 
-      return order
+      return orderLite
     })
   }
 }

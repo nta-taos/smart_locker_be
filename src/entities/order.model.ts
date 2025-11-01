@@ -8,7 +8,7 @@ import { User } from './user.model'
 
 @Entity('orders')
 export class Order extends BaseModel {
-  @Column({ type: 'varchar', length: 50, unique: true, nullable: true })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   order_code!: string
 
   @ManyToOne(() => User, { nullable: false, onDelete: 'CASCADE' })
@@ -52,9 +52,8 @@ export class Order extends BaseModel {
 
   @Column({
     type: 'tinyint',
-    default: OrderType.SHIPPER_TO_GUEST,
-    comment:
-      ' 0 = Người dùng tự thuê trong tòa nhà,1 = Người dùng tự thuê ngoài tòa nhà,2 = Shipper gửi cho người dùng trong tòa nhà,3 = Shipper gửi cho người dùng ngoài tòa nhà,4 = Shipper gửi cho khách chưa đăng ký'
+    default: OrderType.RENT_LOCKER,
+    comment: '0 = Thuê tủ, 1 = Gửi hàng'
   })
   type!: number
 

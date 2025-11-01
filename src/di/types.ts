@@ -38,7 +38,10 @@ const TYPES = {
   MQTTConfig: Symbol.for('MQTTConfig'),
 
   // redis
-  RedisService: Symbol.for('RedisService')
+  RedisService: Symbol.for('RedisService'),
+
+  // Notification slot
+  NotificationRepository: Symbol.for('NotificationRepository')
 }
 
 export default TYPES

@@ -39,7 +39,9 @@ export const ErrorMessages = {
   SLOT_NOT_FOUND: 'Hộc tủ không tồn tại.',
   SLOT_ALREADY_RENTED: 'Hộc tủ này đã được thuê.',
   SLOT_PERMISSION_DENIED: 'Bạn không có quyền thuê hộc tủ này.',
-  LOCKER_INACTIVE: 'Tủ không có kết nối hoặc đang bảo trì.'
+  LOCKER_INACTIVE: 'Tủ không có kết nối hoặc đang bảo trì.',
+  INVALID_SLOT_SIZE: 'Kích thước tủ (slot size) không hợp lệ.',
+  INSUFFICIENT_FUNDS: 'Số dư ví không đủ để thực hiện giao dịch này.'
 }
 
 export const ValidationMessages = {

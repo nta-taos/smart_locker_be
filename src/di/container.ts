@@ -8,6 +8,7 @@ import { UserController } from '@/controllers/user.controller'
 import { WalletTransactionController } from '@/controllers/wallet-transaction.controller'
 import { BuildingRepository } from '@/repositories/building.repository'
 import { LockerSlotRepository } from '@/repositories/locker-slot.repository'
+import { NotificationRepository } from '@/repositories/notification.repository'
 import { OrderRepository } from '@/repositories/order.repository'
 import { WalletTransactionRepository } from '@/repositories/wallet-transaction.repository'
 import { AuthService } from '@/services/auth.service'
@@ -66,5 +67,8 @@ container.bind<MQTTService>(TYPES.MQTTService).to(MQTTService).inSingletonScope(
 
 // bind redis
 container.bind<RedisService>(TYPES.RedisService).to(RedisService).inSingletonScope()
+
+// bind Notification
+container.bind<NotificationRepository>(TYPES.NotificationRepository).to(NotificationRepository)
 
 export { container }
