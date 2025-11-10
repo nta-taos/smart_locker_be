@@ -14,7 +14,16 @@ export const SuccessMessages = {
 
   ORDERS_RETRIEVED: 'Lấy danh sách đơn hàng thành công.',
   ORDER_STATS_RETRIEVED: 'Lấy thống kê đơn hàng 7 ngày gần nhất thành công.',
-  ORDER_CREATED: 'Đơn hàng đã được tạo thành công'
+  ORDER_CREATED: 'Đơn hàng đã được tạo thành công',
+  NOTIFICATION_LIST: 'Lấy danh sách thông báo thành công.',
+  NOTIFICATION_READ: 'Đã đánh dấu thông báo là đã đọc.',
+  NOTIFICATION_ALL_READ: 'Đã đánh dấu tất cả thông báo là đã đọc.',
+  NOTIFICATION_DELETED: 'Xóa thông báo thành công.',
+  PAYMENT_CREATED: 'Tạo yêu cầu thanh toán thành công.',
+  PAYMENT_CONFIRMED: 'Xác nhận thanh toán thành công.',
+  ORDER_AUTHORIZATION_CREATED: 'Yêu cầu ủy quyền đã được tạo thành công.',
+  ORDER_AUTHORIZATION_RETRIEVED: 'Lấy thông tin ủy quyền thành công.',
+  ORDER_AUTHORIZATION_USED: 'Yêu cầu ủy quyền đã được sử dụng.'
 }
 
 export const ErrorMessages = {
@@ -41,7 +50,10 @@ export const ErrorMessages = {
   SLOT_PERMISSION_DENIED: 'Bạn không có quyền thuê hộc tủ này.',
   LOCKER_INACTIVE: 'Tủ không có kết nối hoặc đang bảo trì.',
   INVALID_SLOT_SIZE: 'Kích thước tủ (slot size) không hợp lệ.',
-  INSUFFICIENT_FUNDS: 'Số dư ví không đủ để thực hiện giao dịch này.'
+  INSUFFICIENT_FUNDS: 'Số dư ví không đủ để thực hiện giao dịch này.',
+  NOTIFICATION_NOT_FOUND: 'Thông báo không tồn tại.',
+  PAYMENT_INVALID_CHECKSUM: 'Checksum không hợp lệ.',
+  PAYMENT_INVALID_SIGNATURE: 'Chữ ký không hợp lệ.'
 }
 
 export const ValidationMessages = {

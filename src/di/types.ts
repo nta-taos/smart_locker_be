@@ -41,7 +41,21 @@ const TYPES = {
   RedisService: Symbol.for('RedisService'),
 
   // Notification slot
-  NotificationRepository: Symbol.for('NotificationRepository')
+  NotificationRepository: Symbol.for('NotificationRepository'),
+  NotificationController: Symbol.for('NotificationController'),
+  NotificationService: Symbol.for('NotificationService'),
+
+  // Order Authorization
+  OrderAuthorizationRepository: Symbol.for('OrderAuthorizationRepository'),
+  OrderAuthorizationService: Symbol.for('OrderAuthorizationService'),
+  OrderAuthorizationController: Symbol.for('OrderAuthorizationController'),
+
+  // PayOS
+  PayosService: Symbol.for('PayosService'),
+  PayosController: Symbol.for('PayosController'),
+
+  // Mail
+  MailService: Symbol.for('MailService')
 }
 
 export default TYPES

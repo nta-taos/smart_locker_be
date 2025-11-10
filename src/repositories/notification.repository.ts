@@ -12,4 +12,15 @@ export class NotificationRepository extends BaseRepository<Notification> impleme
   constructor() {
     super(Notification)
   }
+
+  async markAllAsRead(userId: number): Promise<number> {
+    const result = await this.repository
+      .createQueryBuilder()
+      .update()
+      .set({ isRead: true })
+      .where('userId = :userId AND isRead = :isRead', { userId, isRead: false })
+      .execute()
+
+    return result.affected ?? 0
+  }
 }
