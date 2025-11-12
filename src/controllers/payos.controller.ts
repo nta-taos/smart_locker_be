@@ -4,6 +4,7 @@ import { injectable, inject } from 'inversify'
 
 import { ErrorMessages, SuccessMessages } from '@/common/constants/messages'
 import { ApiError, ApiSuccess } from '@/common/responses'
+import { verifyPayOSWebhookSignature } from '@/common/utils/payos'
 import TYPES from '@/di/types'
 import { User } from '@/entities/user.model'
 import { PayosService } from '@/services/payos.service'
@@ -40,31 +41,38 @@ export class PayosController {
    */
   async webhook(req: Request, res: Response, next: NextFunction) {
     try {
-      const { orderCode, amount, description, status, signature } = req.body
+      const checksumKey = process.env.PAYOS_CHECKSUM_KEY!
 
-      if (!orderCode || !amount || !signature) {
-        throw ApiError.badRequest(ErrorMessages.PAYMENT_INVALID_SIGNATURE)
+      const valid = verifyPayOSWebhookSignature(req.body, checksumKey)
+
+      if (!valid) {
+        console.warn('Webhook signature không hợp lệ.', req.body)
+        throw ApiError.badRequest('Chữ ký không hợp lệ.')
       }
 
-      // Verify signature
-      const isValid = this.payosService.verifyChecksum(
-        Number(orderCode),
-        Number(amount),
-        String(description),
-        String(signature)
-      )
-      if (!isValid) throw ApiError.badRequest(ErrorMessages.PAYMENT_INVALID_SIGNATURE)
+      console.log('✅ Webhook hợp lệ:', req.body.data)
 
-      // For PayOS, status should be PAID
-      if (status !== 'PAID') {
-        return ApiSuccess.ok({ status }, 'Payment not yet completed').send(res)
+      const { data } = req.body
+      const { status, orderCode } = data
+
+      if (data.desc !== 'success') {
+        console.log(`Đơn hàng ${orderCode} có trạng thái ${status}, chưa xử lý.`)
+        return res.json({ message: 'OK, status not PAID' })
       }
 
+      console.log(`Trạng thái PAID, đang gọi service confirmPayment cho ${orderCode}...`)
       const info = await this.payosService.confirmPayment(Number(orderCode))
-      if (!info) throw ApiError.badRequest('Transaction not found')
 
-      return ApiSuccess.ok(info, SuccessMessages.PAYMENT_CONFIRMED).send(res)
+      if (!info) {
+        console.error(`Không tìm thấy giao dịch ${orderCode} trong Redis để xác nhận`)
+        throw ApiError.badRequest('Transaction not found or already processed')
+      }
+
+      console.log(`Cộng tiền thành công cho user ${info.userId}, đơn ${orderCode}`)
+      res.json({ message: 'OK', data: info })
     } catch (err) {
+      console.error('Lỗi nghiêm trọng khi xử lý webhook:', err)
+      // Dùng next(err) để error handler chung của Express xử lý
       next(err)
     }
   }

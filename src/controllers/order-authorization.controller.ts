@@ -3,7 +3,7 @@ import { NextFunction, Request, Response } from 'express'
 import { injectable, inject } from 'inversify'
 
 import { SuccessMessages } from '@/common/constants/messages'
-import { ApiSuccess } from '@/common/responses'
+import { ApiError, ApiSuccess } from '@/common/responses'
 import TYPES from '@/di/types'
 import { OrderAuthorizationService } from '@/services/order-authorization.service'
 
@@ -34,28 +34,18 @@ export class OrderAuthorizationController {
     }
   }
 
-  getAuthorizationByAccessLink = async (req: Request, res: Response, next: NextFunction) => {
+  confirmAuthorizationByToken = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { access_link } = req.query
-      if (!access_link || typeof access_link !== 'string') {
-        throw new Error('access_link là bắt buộc')
+      const { token } = req.body
+      const { orderId } = req.params
+      if (!orderId) {
+        ApiError.badRequest('orderId là bắt buộc')
+      }
+      if (!token || typeof token !== 'string') {
+        ApiError.badRequest('token là bắt buộc')
       }
 
-      const data = await this.orderAuthorizationService.getAuthorizationByAccessLink(access_link)
-      return ApiSuccess.ok(data, SuccessMessages.ORDER_AUTHORIZATION_RETRIEVED).send(res)
-    } catch (err) {
-      next(err)
-    }
-  }
-
-  confirmAuthorizationByAccessLink = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { access_link } = req.body
-      if (!access_link || typeof access_link !== 'string') {
-        throw new Error('access_link là bắt buộc')
-      }
-
-      const data = await this.orderAuthorizationService.confirmAuthorizationByAccessLink(access_link)
+      const data = await this.orderAuthorizationService.confirmAuthorizationByToken(orderId, token)
       return ApiSuccess.ok(data, 'Xác nhận nhận hàng thành công').send(res)
     } catch (err) {
       next(err)

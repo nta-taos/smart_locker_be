@@ -27,17 +27,13 @@ export class PayosService {
     autoBind(this)
   }
 
-  /**
-   * Tạo yêu cầu thanh toán thật trên PayOS (production)
-   */
   async createPayment(userId: number, amount: number, orderId?: number) {
-    const orderCode = Date.now()
+    const orderCode = Number(`${Date.now()}${Math.floor(Math.random() * 1000)}`)
+    console.log('Creating payment with orderCode:', orderCode)
     const rawDescription = `Nạp ${amount.toLocaleString()}đ vào ví người dùng #${userId}`
 
-    // PayOS limits description length to 25 chars and does not accept a currency field in this endpoint
     const description = rawDescription.length > 25 ? rawDescription.slice(0, 25) : rawDescription
 
-    // Create signature following PayOS format
     const signData = {
       amount,
       cancelUrl: this.cancelUrl,
@@ -67,26 +63,19 @@ export class PayosService {
       response = await axios.post(this.gatewayBase, body, {
         headers,
         httpsAgent: new https.Agent({
-          // Nếu bạn gặp vấn đề với chứng chỉ trong dev, đặt false (chỉ dev)
           rejectUnauthorized: false
         })
       })
     } catch (err: unknown) {
-      // Bao gồm response body nếu có để debug
-      // err may be an AxiosError with response, so try to safely extract
       const msg = err instanceof Error ? err.message : String(err)
-      // try to access response data if available
       const respObj = err as { response?: { data?: unknown } } | undefined
       const respData = respObj?.response?.data ?? null
-      // Ghi log cho backend
-      console.error('PayOS POST error:', msg, respData)
       throw new Error(`PayOS request failed: ${msg} - ${JSON.stringify(respData)}`)
     }
 
     const paymentUrl = response.data?.data?.checkoutUrl
     if (!paymentUrl) throw new Error(`Không thể tạo link thanh toán từ PayOS: ${JSON.stringify(response.data)}`)
 
-    // Lưu metadata vào Redis để xác nhận sau khi webhook tới
     await this.redisService.safeSetCache(
       `payos:payment:${orderCode}`,
       {
@@ -94,55 +83,55 @@ export class PayosService {
         amount,
         orderId
       },
-      60 * 60 // 1 giờ
+      60 * 60
     )
 
     return { paymentUrl, orderCode }
   }
 
-  /**
-   * Xác minh checksum trả về từ webhook PayOS
-   */
-  /**
-   * Create HMAC-SHA256 signature for PayOS
-   */
   private createSignature(data: Record<string, string | number>, checksumKey: string): string {
-    // Sort by field name
+    // Sắp xếp các key
     const sortedKeys = Object.keys(data).sort()
+
+    // Chỉ lấy các trường có giá trị (không phải null/undefined)
     const sortedData = sortedKeys.reduce((acc: Record<string, string | number>, key) => {
-      if (data[key] !== null && data[key] !== undefined) {
-        acc[key] = data[key]
+      const value = data[key] // Lấy giá trị
+      // PayOS chỉ ký các trường có giá trị
+      if (value !== null && value !== undefined && value !== '') {
+        acc[key] = value
       }
       return acc
     }, {})
 
-    // Create string to sign
+    // Tạo chuỗi để ký
     const stringToSign = Object.entries(sortedData)
       .map(([key, value]) => `${key}=${value}`)
       .join('&')
 
-    // Create HMAC-SHA256
+    // Thêm log RẤT QUAN TRỌNG này để debug
+    console.log('stringToSign (Webhook):', stringToSign)
+
     return crypto.createHmac('sha256', checksumKey).update(stringToSign).digest('hex')
   }
 
   /**
    * Verify webhook signature from PayOS
    */
-  verifyChecksum(orderCode: number, amount: number, description: string, checksum: string) {
-    const signData = {
-      amount,
-      description,
-      orderCode
-    }
+  verifyChecksum(dataObject: Record<string, any>, signature: string): boolean {
+    // Không tạo object mới, mà dùng chính object 'data' từ webhook
+    const expectedSignature = this.createSignature(dataObject, this.checksumKey)
 
-    const expected = this.createSignature(signData, this.checksumKey)
-    return checksum === expected
+    console.log('Received Signature:', signature)
+    console.log('Expected Signature:', expectedSignature)
+
+    return signature === expectedSignature
   }
 
   /**
    * Khi PayOS gửi webhook báo thanh toán thành công → cộng tiền vào ví
    */
   async confirmPayment(orderCode: number) {
+    console.log('Confirming payment for orderCode:', orderCode)
     const data = await this.redisService.getCache<{
       userId: number
       amount: number

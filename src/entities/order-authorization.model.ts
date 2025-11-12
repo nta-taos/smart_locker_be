@@ -27,5 +27,5 @@ export class OrderAuthorization extends BaseModel {
   expires_at?: Date
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  access_link?: string
+  token?: string
 }

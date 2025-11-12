@@ -6,6 +6,7 @@ export const ENV = process.env.NODE_ENV ?? 'development'
 
 export const APP_BASE_URL = process.env.APP_BASE_URL || 'http://localhost:3000'
 export const UPLOAD_FOLDER = process.env.UPLOAD_FOLDER || '/uploads'
+export const CLIENT_BASE_URL = process.env.CLIENT_BASE_URL || 'http://localhost:5173'
 
 export const REDIS_CONFIG = {
   host: process.env.REDIS_HOST || '127.0.0.1',

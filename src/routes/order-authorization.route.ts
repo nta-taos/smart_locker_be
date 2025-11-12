@@ -9,8 +9,7 @@ export default function createOrderAuthorizationRouter(): Router {
   const router = Router()
   const controller = container.get<OrderAuthorizationController>(TYPES.OrderAuthorizationController)
 
-  router.get('/access-link', controller.getAuthorizationByAccessLink)
-  router.post('/access-link/confirm', controller.confirmAuthorizationByAccessLink)
+  router.post('/:orderId/confirm', controller.confirmAuthorizationByToken)
   router.use(authMiddleware)
   router.post('/', controller.createAuthorization)
 

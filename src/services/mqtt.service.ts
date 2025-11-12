@@ -51,11 +51,15 @@ export class MQTTService {
       console.log('✅ MQTT connected')
       this.publish('backend/status', { online: true, timestamp: Date.now() })
       this.reconnectAttempts = 0
-      // this.subscribeToTopics()
+
+      this.client.subscribe('locker/+/status', { qos: 0 }, (err) => {
+        if (err) console.error('❌ Lỗi subscribe:', err)
+        else console.log('📡 Đã subscribe topic locker/+/status')
+      })
     })
 
     this.client.on('error', (err: Error) => console.error('❌ MQTT error', err))
-    this.client.on('close', () => console.log('MQTT connection closed'))
+    this.client.on('close', () => console.log('⚠️ MQTT connection closed'))
     this.client.on('reconnect', () => {
       this.reconnectAttempts++
       console.log(`MQTT reconnecting, attempt #${this.reconnectAttempts}`)
@@ -68,38 +72,29 @@ export class MQTTService {
     this.client.on('message', (topic, message) => this.handleMessage(topic, message))
   }
 
-  private subscribeToTopics() {
-    this.client.subscribe('devices/+/data', (err) => {
-      if (err) console.error('❌ MQTT subscribe failed', err)
-      else console.log('Subscribed to topic: devices/+/data')
-    })
-
-    this.client.subscribe('locker/+/status', (err) => {
-      if (err) console.error('❌ MQTT subscribe failed', err)
-      else console.log('Subscribed to topic: locker/+/status')
-    })
-  }
-
   private handleMessage(topic: string, message: Buffer) {
     try {
-      const payload = JSON.parse(message.toString())
-      console.log(`Received message from topic ${topic}:`, payload)
+      const payload = JSON.parse(message.toString()) as LockerResponse
+      console.log(`📩 Nhận phản hồi từ topic ${topic}:`, payload)
 
       const { requestId, state } = payload
       if (requestId && this.pendingRequests.has(requestId)) {
         const { resolve, reject, timeout } = this.pendingRequests.get(requestId)!
         clearTimeout(timeout)
 
+        // ✅ Sửa lại điều kiện state đúng
         if (state === 'OPENED') {
+          console.log('✅ Ngăn tủ mở thành công.')
           resolve(payload)
         } else {
+          console.warn('⚠️ Lệnh thất bại:', state)
           reject(new Error(`Lệnh thất bại: ${state}`))
         }
 
         this.pendingRequests.delete(requestId)
       }
     } catch (err) {
-      console.error('Invalid JSON message:', message.toString(), err)
+      console.error('❌ Invalid JSON message:', message.toString(), err)
     }
   }
 
@@ -120,11 +115,13 @@ export class MQTTService {
         requestId
       }
 
-      this.client.publish(`locker/${lockerId}/control`, JSON.stringify(payload), { qos: 0 })
+      const topic = `locker/${lockerId}/control`
+      console.log(`📤 Gửi lệnh đến topic ${topic}:`, payload)
+      this.client.publish(topic, JSON.stringify(payload), { qos: 0 })
 
       const timeout = setTimeout(() => {
         this.pendingRequests.delete(requestId)
-        reject(new Error('Quá thời gian chờ phản hồi từ thiết bị'))
+        reject(new Error('⏰ Quá thời gian chờ phản hồi từ thiết bị'))
       }, timeoutMs)
 
       this.pendingRequests.set(requestId, { resolve, reject, timeout })
@@ -134,11 +131,31 @@ export class MQTTService {
   public publish(topic: string, message: unknown) {
     if (this.client && this.client.connected) {
       const payload = typeof message === 'string' ? message : JSON.stringify(message)
-      this.client.publish(topic, payload, { qos: 1, retain: false })
+      this.client.publish(topic, payload, { qos: 0, retain: false })
+      console.log(`📤 Publish đến ${topic}:`, payload)
     }
   }
 
   public getClient(): MqttClient {
     return this.client
+  }
+
+  // 🔓 Hàm mở ngăn tủ
+  public async openLocker(lockerId: number, slotId: number, hw_Index = 1): Promise<LockerResponse> {
+    console.log(`🔓 Gửi lệnh mở khóa cho locker ${lockerId}, slot ${slotId}`)
+    try {
+      const response = await this.sendCommand(lockerId, slotId, hw_Index, 'OPEN')
+
+      if (response.state === 'OPENED') {
+        console.log(`✅ Ngăn tủ ${slotId} đã mở thành công.`)
+      } else {
+        console.warn(`⚠️ Ngăn tủ ${slotId} mở thất bại: ${response.state}`)
+      }
+
+      return response
+    } catch (error) {
+      console.error(`❌ Lỗi khi mở ngăn tủ ${slotId}:`, error)
+      throw error
+    }
   }
 }

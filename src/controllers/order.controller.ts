@@ -16,6 +16,17 @@ export class OrderController {
     autoBind(this)
   }
 
+  async openOrder(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = (req.user as User).id
+      const { orderId } = req.params
+      const data = await this.orderService.openOrder(userId, Number(orderId))
+      return ApiSuccess.ok(data, 'Mở ngăn tủ thành công').send(res)
+    } catch (err) {
+      next(err)
+    }
+  }
+
   async getMyOrders(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = (req.user as User).id

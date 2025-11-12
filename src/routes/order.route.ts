@@ -22,6 +22,7 @@ export default function createOrderRouter(): Router {
   // )
 
   router.post('/send', validationMiddleware(SendPackageDto), orderController.sendPackage)
+  router.post('/:orderId/open', orderController.openOrder)
 
   return router
 }

@@ -24,6 +24,7 @@ import { OrderRepository } from '@/repositories/order.repository'
 import { UserRepository } from '@/repositories/user.repository'
 import { WalletTransactionRepository } from '@/repositories/wallet-transaction.repository'
 
+import { MQTTService } from './mqtt.service'
 import SocketService from './socket.service'
 
 @injectable()
@@ -34,7 +35,8 @@ export class OrderService {
     @inject(TYPES.UserRepository) private readonly userRepository: UserRepository,
     @inject(TYPES.SocketService) private readonly socketService: SocketService,
     @inject(TYPES.WalletTransactionRepository) private readonly transactionRepo: WalletTransactionRepository,
-    @inject(TYPES.NotificationRepository) private readonly notificationRepository: NotificationRepository
+    @inject(TYPES.NotificationRepository) private readonly notificationRepository: NotificationRepository,
+    @inject(TYPES.MQTTService) private readonly mqttService: MQTTService
   ) {
     autoBind(this)
   }
@@ -201,7 +203,7 @@ export class OrderService {
         lockerSlot,
         start_time: now.toDate(),
         end_time: receiveTimeDayjs.toDate(),
-        status: OrderStatus.PENDING,
+        status: OrderStatus.SENDING,
         type: OrderType.SEND_PACKAGE,
         payment_status: PaymentStatus.PAID,
         fee: totalCost,
@@ -240,6 +242,12 @@ export class OrderService {
         await manager.save(receiverNotification)
       }
 
+      try {
+        await this.mqttService.sendCommand(lockerSlot.locker.id, lockerSlot.id, lockerSlot.hw_index, 'OPEN')
+      } catch {
+        throw ApiError.internal('Không thể mở khóa thiết bị, vui lòng thử lại.')
+      }
+
       if (orderLite.receiver?.id) {
         this.socketService.emitToUser(orderLite.receiver?.id, 'order:created', orderLite)
       }
@@ -255,5 +263,45 @@ export class OrderService {
 
       return orderLite
     })
+  }
+
+  async openOrder(userId: number, orderId: number) {
+    const order = await this.orderRepository.findById(orderId, {
+      relations: ['lockerSlot', 'lockerSlot.locker']
+    })
+
+    if (!order) throw ApiError.notFound('Đơn hàng không tồn tại.')
+    if (order.receiver?.id !== userId) {
+      throw ApiError.unauthorized('Bạn không có quyền mở đơn hàng này.')
+    }
+
+    const lockerSlot = order.lockerSlot
+    if (!lockerSlot) throw ApiError.badRequest('Không tìm thấy ngăn tủ cho đơn hàng này.')
+
+    if (lockerSlot.status === SlotStatus.MAINTENANCE) {
+      throw ApiError.badRequest('Ngăn tủ đang bảo trì, không thể mở.')
+    }
+    if (lockerSlot.status === SlotStatus.EMPTY) {
+      throw ApiError.badRequest('Ngăn tủ hiện đang trống, không thể mở.')
+    }
+
+    try {
+      await this.mqttService.sendCommand(lockerSlot.locker.id, lockerSlot.id, lockerSlot.hw_index, 'OPEN')
+    } catch {
+      throw ApiError.internal('Không thể mở khóa thiết bị, vui lòng thử lại.')
+    }
+
+    order.status = OrderStatus.RECEIVED
+    lockerSlot.status = SlotStatus.EMPTY
+    await AppDataSource.transaction(async (manager) => {
+      await manager.save(order)
+      await manager.save(lockerSlot)
+    })
+
+    this.socketService.emitToUser(order.receiver?.id, 'order:updated', order)
+    this.socketService.emitToUser(order.sender?.id, 'order:updated', order)
+    this.socketService.emitToAll('slot:updated', lockerSlot)
+
+    return order
   }
 }
