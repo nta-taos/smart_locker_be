@@ -117,13 +117,9 @@ export class PayosService {
   /**
    * Verify webhook signature from PayOS
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   verifyChecksum(dataObject: Record<string, any>, signature: string): boolean {
-    // Không tạo object mới, mà dùng chính object 'data' từ webhook
     const expectedSignature = this.createSignature(dataObject, this.checksumKey)
-
-    console.log('Received Signature:', signature)
-    console.log('Expected Signature:', expectedSignature)
-
     return signature === expectedSignature
   }
 

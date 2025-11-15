@@ -18,9 +18,9 @@ export class OrderController {
 
   async openOrder(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = (req.user as User).id
+      const user = req.user as User
       const { orderId } = req.params
-      const data = await this.orderService.openOrder(userId, Number(orderId))
+      const data = await this.orderService.openOrder(user, Number(orderId))
       return ApiSuccess.ok(data, 'Mở ngăn tủ thành công').send(res)
     } catch (err) {
       next(err)
@@ -65,6 +65,17 @@ export class OrderController {
 
       const order = await this.orderService.createSendPackageOrder(userId, sendData)
 
+      return ApiSuccess.created(order, SuccessMessages.ORDER_CREATED).send(res)
+    } catch (err) {
+      next(err)
+    }
+  }
+
+  async rentLocker(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = req.user as User
+      const rentData = req.body
+      const order = await this.orderService.createRentalOrder(user, rentData)
       return ApiSuccess.created(order, SuccessMessages.ORDER_CREATED).send(res)
     } catch (err) {
       next(err)

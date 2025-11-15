@@ -86,7 +86,7 @@ export class AuthService {
     }
     const isMatch = await compare(password, user.password)
     if (!isMatch) {
-      throw ApiError.unauthorized(ErrorMessages.LOGIN_FAILED)
+      throw ApiError.notFound(ErrorMessages.LOGIN_FAILED)
     }
 
     // set cache

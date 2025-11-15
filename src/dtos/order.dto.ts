@@ -157,3 +157,18 @@ export class SendPackageDto {
   @IsNotEmpty({ message: 'Kích thước slot không được để trống.' })
   size!: SlotSize
 }
+
+export class RentLockerDto {
+  @IsInt({ message: 'ID tủ khóa phải là số nguyên.' })
+  @IsNotEmpty({ message: 'ID tủ khóa không được để trống.' })
+  @Min(0, { message: 'ID tủ khóa phải lớn hơn hoặc bằng 0.' })
+  lockerId!: number
+  @IsDateString({}, { message: 'Thời gian nhận tủ không hợp lệ. Vui lòng sử dụng định dạng ISO 8601.' })
+  @IsNotEmpty({ message: 'Thời gian nhận tủ không được để trống.' })
+  receiveDateTime!: string
+  @IsEnum(SlotSize, {
+    message: 'Kích thước slot không hợp lệ. Phải là 0 (SMALL), 1 (MEDIUM), hoặc 2 (LARGE).'
+  })
+  @IsNotEmpty({ message: 'Kích thước slot không được để trống.' })
+  size!: SlotSize
+}

@@ -40,7 +40,12 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     }
 
     const userService = container.get<UserService>(TYPES.UserService)
-    const user = await userService.getUserById(parseInt(decoded.sub))
+    let user
+    try {
+      user = await userService.getUserById(parseInt(decoded.sub))
+    } catch {
+      ApiError.unauthorized(ErrorMessages.USER_NOT_FOUND)
+    }
     if (!user) {
       throw ApiError.unauthorized(ErrorMessages.USER_NOT_FOUND)
     }
