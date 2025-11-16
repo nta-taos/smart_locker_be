@@ -17,6 +17,7 @@ export default function createOrderRouter(): Router {
   router.post('/rent', validationMiddleware(RentLockerDto), orderController.rentLocker)
   router.post('/send', validationMiddleware(SendPackageDto), orderController.sendPackage)
   router.post('/:orderId/open', orderController.openOrder)
+  router.get('/:orderId', orderController.getSingleOrder)
 
   return router
 }

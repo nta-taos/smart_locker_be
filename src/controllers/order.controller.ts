@@ -15,6 +15,16 @@ export class OrderController {
   constructor(@inject(TYPES.OrderService) private readonly orderService: OrderService) {
     autoBind(this)
   }
+  async getSingleOrder(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { orderId } = req.params
+      const userId = (req.user as User).id
+      const data = await this.orderService.getOrderById(Number(orderId), userId)
+      return ApiSuccess.ok(data, 'Mở ngăn tủ thành công').send(res)
+    } catch (err) {
+      next(err)
+    }
+  }
 
   async openOrder(req: Request, res: Response, next: NextFunction) {
     try {

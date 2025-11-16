@@ -49,6 +49,26 @@ export class OrderService {
     return SlotPricePerTime[slotSize as SlotSize]
   }
 
+  async getOrderById(orderId: number, userId: number) {
+    console.log('check', orderId, userId)
+    const options = {
+      relations: ['sender', 'receiver', 'lockerSlot']
+    }
+
+    const order = await this.orderRepository.findOneByCondition({ id: orderId }, options)
+    console.log(order)
+
+    if (!order) {
+      throw ApiError.notFound('Không tìm thấy đơn hàng.')
+    }
+
+    if (order.sender.id !== userId || order.receiver?.id !== userId) {
+      throw ApiError.badRequest('Bạn không có quyền xem đơn hàng này.')
+    }
+
+    return toOrderDTO(order)
+  }
+
   async getOrdersByUserId(userId: number, status: string = 'all', page: number = 1, limit: number = 6) {
     let whereCondition: FindOptionsWhere<Order>[] = [{ sender: { id: userId } }, { receiver: { id: userId } }]
 
@@ -237,16 +257,21 @@ export class OrderService {
           title: `Bạn có gói hàng mới từ ${sender.name}`,
           message: `Bạn có một gói hàng mới tại tủ khóa. Mã đơn hàng: ${orderCode}. Vui lòng nhận hàng trước ${receiveTimeDayjs.format('HH:mm DD/MM')}.`,
           isRead: false,
-          data: { orderCode, senderPhone: sender.phone, receiveTime: receiveTimeDayjs.toISOString(), role: 'receiver' }
+          data: {
+            orderId: savedOrder.id,
+            senderPhone: sender.phone,
+            receiveTime: receiveTimeDayjs.toISOString(),
+            role: 'receiver'
+          }
         })
         await manager.save(receiverNotification)
       }
 
-      try {
-        await this.mqttService.sendCommand(lockerSlot.locker.id, lockerSlot.id, lockerSlot.hw_index, 'OPEN')
-      } catch {
-        throw ApiError.badRequest('Không thể mở khóa thiết bị, vui lòng thử lại.')
-      }
+      // try {
+      //   await this.mqttService.sendCommand(lockerSlot.locker.id, lockerSlot.id, lockerSlot.hw_index, 'OPEN')
+      // } catch {
+      //   throw ApiError.badRequest('Không thể mở khóa thiết bị, vui lòng thử lại.')
+      // }
 
       if (orderLite.receiver?.id) {
         this.socketService.emitToUser(orderLite.receiver?.id, 'order:created', orderLite)
@@ -268,7 +293,7 @@ export class OrderService {
 
   async openOrder(user: User, orderId: number) {
     const order = await this.orderRepository.findById(orderId, {
-      relations: ['lockerSlot', 'sender', 'lockerSlot.locker']
+      relations: ['lockerSlot', 'sender', 'receiver', 'lockerSlot.locker']
     })
 
     if (!order) throw ApiError.notFound('Đơn hàng không tồn tại.')
@@ -286,24 +311,64 @@ export class OrderService {
       throw ApiError.badRequest('Ngăn tủ hiện đang trống, không thể mở.')
     }
 
-    try {
-      await this.mqttService.sendCommand(lockerSlot.locker.id, lockerSlot.id, lockerSlot.hw_index, 'OPEN')
-    } catch {
-      throw ApiError.badRequest('Không thể mở khóa thiết bị, vui lòng thử lại.')
-    }
+    // try {
+    //   await this.mqttService.sendCommand(lockerSlot.locker.id, lockerSlot.id, lockerSlot.hw_index, 'OPEN')
+    // } catch {
+    //   throw ApiError.badRequest('Không thể mở khóa thiết bị, vui lòng thử lại.')
+    // }
 
     order.status = OrderStatus.RECEIVED
     lockerSlot.status = SlotStatus.EMPTY
-    await AppDataSource.transaction(async (manager) => {
-      await manager.save(order)
-      await manager.save(lockerSlot)
-    })
 
-    this.socketService.emitToUser(user.id, 'order:updated', order)
-    this.socketService.emitToUser(order.sender?.id, 'order:updated', order)
-    this.socketService.emitToAll('slot:updated', lockerSlot)
+    const { savedOrder, savedLockerSlot, receiverNotification, senderNotification } = await AppDataSource.transaction(
+      async (manager) => {
+        const savedOrder = await manager.save(order)
+        const savedLockerSlot = await manager.save(lockerSlot)
 
-    return order
+        const receiverNotification = manager.create(Notification, {
+          userId: user.id,
+          user: user,
+          type: NotificationType.ORDER_RECEIVED,
+          title: `Bạn đã nhận thành công đơn hàng ${order.order_code}`,
+          message: `Bạn đã nhận thành công gói hàng từ ${order.sender.name}.`,
+          isRead: false,
+          data: { orderId: order.id, role: 'receiver' }
+        })
+        await manager.save(receiverNotification)
+
+        let senderNotification = null
+        if (order.sender && order.type === OrderType.SEND_PACKAGE) {
+          senderNotification = manager.create(Notification, {
+            userId: order.sender.id,
+            user: order.sender,
+            type: NotificationType.ORDER_RECEIVED,
+            title: `Đơn hàng ${order.id} đã được nhận`,
+            message: `Người nhận (${user.name}) đã nhận gói hàng của bạn.`,
+            isRead: false,
+            data: { orderId: order.id, role: 'sender' }
+          })
+          await manager.save(senderNotification)
+        }
+
+        return { savedOrder, savedLockerSlot, receiverNotification, senderNotification }
+      }
+    )
+    const orderDTO = toOrderDTO(savedOrder)
+    const { ...slotOnly } = savedLockerSlot
+
+    this.socketService.emitToUser(user.id, 'order:updated', orderDTO)
+    if (order.sender?.id) {
+      this.socketService.emitToUser(order.sender.id, 'order:updated', orderDTO)
+    }
+
+    this.socketService.emitToUser(user.id, 'notification:created', receiverNotification)
+    if (senderNotification && order.sender?.id) {
+      this.socketService.emitToUser(order.sender.id, 'notification:created', senderNotification)
+    }
+
+    this.socketService.emitToAll('slot:updated', slotOnly)
+
+    return orderDTO
   }
 
   async createRentalOrder(user: User, rentData: RentLockerDto) {
@@ -403,15 +468,15 @@ export class OrderService {
         title: `Thuê tủ ${generatedOrderCode} thành công`,
         message: `Bạn đã thuê tủ ${lockerSlot.locker.code} thành công. Vui lòng sử dụng trước ${receiveTimeDayjs.format('HH:mm DD/MM')}.`,
         isRead: false,
-        data: { orderCode: generatedOrderCode, totalCost, role: 'renter' }
+        data: { orderId: savedOrder.id, totalCost, role: 'renter' }
       })
       await manager.save(rentalNotification)
 
-      try {
-        await this.mqttService.sendCommand(lockerSlot.locker.id, lockerSlot.id, lockerSlot.hw_index, 'OPEN')
-      } catch {
-        throw ApiError.badRequest('Không thể mở khóa thiết bị, vui lòng thử lại.')
-      }
+      // try {
+      //   await this.mqttService.sendCommand(lockerSlot.locker.id, lockerSlot.id, lockerSlot.hw_index, 'OPEN')
+      // } catch {
+      //   throw ApiError.badRequest('Không thể mở khóa thiết bị, vui lòng thử lại.')
+      // }
 
       this.socketService.emitToUser(orderLite.sender?.id, 'order:created', orderLite)
       this.socketService.emitToUser(orderLite.sender?.id, 'wallet:updated', renterWithWallet.wallet)
