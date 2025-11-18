@@ -30,7 +30,7 @@ export class PayosService {
   async createPayment(userId: number, amount: number, orderId?: number) {
     const orderCode = Number(`${Date.now()}${Math.floor(Math.random() * 1000)}`)
     console.log('Creating payment with orderCode:', orderCode)
-    const rawDescription = `Nạp ${amount.toLocaleString()}đ vào ví người dùng #${userId}`
+    const rawDescription = `Nạp tiền vào ví`
 
     const description = rawDescription.length > 25 ? rawDescription.slice(0, 25) : rawDescription
 
