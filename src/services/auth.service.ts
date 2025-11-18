@@ -1,5 +1,6 @@
 import autoBind from 'auto-bind'
 import { compare, hash } from 'bcryptjs'
+import { randomBytes } from 'crypto'
 import { OAuth2Client } from 'google-auth-library'
 import { StatusCodes } from 'http-status-codes'
 import { injectable, inject } from 'inversify'
@@ -10,6 +11,7 @@ import { ApprovalStatus, UserRole } from '@/common/enum/role.enum'
 import { ApiError } from '@/common/responses'
 import { signToken } from '@/common/utils/jwt'
 import { toUserDTO } from '@/common/utils/user.helper'
+import { CLIENT_BASE_URL } from '@/config/config'
 import TYPES from '@/di/types'
 import { UserDTO } from '@/dtos/user.dto'
 import { User } from '@/entities/user.model'
@@ -18,14 +20,18 @@ import { BuildingRepository } from '@/repositories/building.repository'
 import { UserRepository } from '@/repositories/user.repository'
 
 import { RedisService } from './redis.service'
+import { MailService } from './mail.service'
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 @injectable()
 export class AuthService {
+  private readonly resetPasswordTTL = 10 * 60
+
   constructor(
     @inject(TYPES.UserRepository) private readonly userRepository: UserRepository,
     @inject(TYPES.BuildingRepository) private readonly buildingRepository: BuildingRepository,
-    @inject(TYPES.RedisService) private readonly redisService: RedisService
+    @inject(TYPES.RedisService) private readonly redisService: RedisService,
+    @inject(TYPES.MailService) private readonly mailService: MailService
   ) {
     autoBind(this)
   }
@@ -187,5 +193,51 @@ export class AuthService {
       role: newUser.role
     })
     return { user: savedUser, token }
+  }
+
+  async requestPasswordReset(email: string) {
+    const user = await this.userRepository.findByEmail(email)
+    if (!user) {
+      throw ApiError.notFound(ErrorMessages.USER_NOT_FOUND)
+    }
+
+    const token = this.generateResetCode()
+    const cacheKey = CacheKeys.PASSWORD_RESET(token)
+    await this.redisService.safeSetCache(cacheKey, { userId: user.id }, this.resetPasswordTTL)
+
+    const resetLink = `${CLIENT_BASE_URL.replace(/\/$/, '')}/reset-password?token=${token}`
+
+    await this.mailService.sendMail({
+      to: user.email,
+      subject: 'Yêu cầu đặt lại mật khẩu',
+      text: `Nhấn vào liên kết sau để đặt lại mật khẩu của bạn: ${resetLink}. Liên kết hết hạn sau 10 phút.`,
+      html: `<p>Xin chào ${user.name},</p>
+             <p>Bạn vừa yêu cầu đặt lại mật khẩu cho tài khoản Smart Locker.</p>
+             <p>Vui lòng nhấn vào liên kết bên dưới trong vòng 10 phút để đặt lại mật khẩu:</p>
+             <p><a href="${resetLink}">${resetLink}</a></p>
+             <p>Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email.</p>`
+    })
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const cacheKey = CacheKeys.PASSWORD_RESET(token)
+    const cached = await this.redisService.safeGetCache<{ userId: number }>(cacheKey)
+
+    if (!cached) {
+      throw ApiError.badRequest(ErrorMessages.RESET_CODE_EXPIRED)
+    }
+
+    const user = await this.userRepository.findById(cached.userId)
+    if (!user) {
+      throw ApiError.notFound(ErrorMessages.USER_NOT_FOUND)
+    }
+
+    const hashedPassword = await hash(newPassword, 10)
+    await this.userRepository.updateEntity(user.id, { password: hashedPassword })
+    await this.redisService.delCache(cacheKey)
+  }
+
+  private generateResetCode() {
+    return randomBytes(32).toString('hex')
   }
 }

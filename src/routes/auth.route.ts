@@ -4,7 +4,7 @@ import { validationMiddleware } from '@/common/middleware/validation.middleware'
 import { AuthController } from '@/controllers/auth.controller'
 import { container } from '@/di/container'
 import TYPES from '@/di/types'
-import { LoginDto, RegisterDto } from '@/dtos/auth.dto'
+import { ForgotPasswordRequestDto, LoginDto, RegisterDto, ResetPasswordDto } from '@/dtos/auth.dto'
 
 export default function createAuthRouter(): Router {
   const router = Router()
@@ -14,6 +14,8 @@ export default function createAuthRouter(): Router {
   router.post('/login', validationMiddleware(LoginDto), authController.login)
   router.post('/google-check', authController.googleCheck)
   router.post('/google-register-complete', authController.googleRegisterComplete)
+  router.post('/forgot-password', validationMiddleware(ForgotPasswordRequestDto), authController.requestPasswordReset)
+  router.post('/reset-password', validationMiddleware(ResetPasswordDto), authController.resetPassword)
 
   return router
 }

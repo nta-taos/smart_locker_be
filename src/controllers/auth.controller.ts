@@ -90,4 +90,26 @@ export class AuthController {
       next(error)
     }
   }
+
+  async requestPasswordReset(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email } = req.body
+      await this.authService.requestPasswordReset(email)
+
+      return ApiSuccess.ok({}, SuccessMessages.RESET_CODE_SENT).send(res)
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  async resetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { token, newPassword } = req.body
+      await this.authService.resetPassword(token, newPassword)
+
+      return ApiSuccess.ok({}, SuccessMessages.PASSWORD_RESET).send(res)
+    } catch (error) {
+      next(error)
+    }
+  }
 }
