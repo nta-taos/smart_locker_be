@@ -4,6 +4,8 @@ export const SuccessMessages = {
   TOKEN_VALID: 'Token hợp lệ.',
   USER_LOGGED_IN: 'Đăng nhập thành công.',
   USER_UPDATED: 'Cập nhật người dùng thành công',
+  RESET_CODE_SENT: 'Mã đặt lại mật khẩu đã được gửi.',
+  PASSWORD_RESET: 'Đặt lại mật khẩu thành công.',
 
   TRANSACTION_RETRIEVED: 'Lấy thông tin giao dịch thành công.',
   TRANSACTION_CREATED: 'Tạo giao dịch thành công.',
@@ -39,6 +41,8 @@ export const ErrorMessages = {
   EMAIL_ALREADY_REGISTERED: 'Email đã tồn tại.',
   BUILDING_NOT_FOUND: 'Tòa nhà không tồn tại.',
   LOGIN_FAILED: 'Đăng nhập thất bại.',
+  RESET_CODE_INVALID: 'Liên kết đặt lại mật khẩu không hợp lệ.',
+  RESET_CODE_EXPIRED: 'Liên kết đặt lại mật khẩu đã hết hạn hoặc không tồn tại.',
 
   IMAGE_REQUIRED: 'Không có file để lưu.',
   IMAGE_INVALID: 'Chỉ được upload file ảnh.',
@@ -65,6 +69,9 @@ export const ValidationMessages = {
   EMAIL_INVALID: 'Email không hợp lệ',
   PASSWORD_REQUIRED: 'Mật khẩu là bắt buộc.',
   PASSWORD_MIN_LENGTH: 'Mật khẩu phải có ít nhất 8 ký tự.',
+  OTP_REQUIRED: 'Mã xác thực là bắt buộc.',
+  OTP_INVALID: 'Mã xác thực phải gồm 6 chữ số.',
+  RESET_TOKEN_REQUIRED: 'Token đặt lại mật khẩu là bắt buộc.',
   BUILDING_ID_NUMBER: 'ID tòa nhà phải là số.',
   ROLE_INVALID: 'Phân quyền không hợp lệ',
 

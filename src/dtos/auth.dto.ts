@@ -47,3 +47,18 @@ export class LoginDto {
   @MinLength(8, { message: ValidationMessages.PASSWORD_MIN_LENGTH })
   readonly password!: string
 }
+
+export class ForgotPasswordRequestDto {
+  @IsNotEmpty({ message: ValidationMessages.EMAIL_REQUIRED })
+  @IsEmail({}, { message: ValidationMessages.EMAIL_INVALID })
+  readonly email!: string
+}
+
+export class ResetPasswordDto {
+  @IsNotEmpty({ message: ValidationMessages.RESET_TOKEN_REQUIRED })
+  readonly token!: string
+
+  @IsNotEmpty({ message: ValidationMessages.PASSWORD_REQUIRED })
+  @MinLength(8, { message: ValidationMessages.PASSWORD_MIN_LENGTH })
+  readonly newPassword!: string
+}
