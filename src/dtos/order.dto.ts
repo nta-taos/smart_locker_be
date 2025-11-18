@@ -36,34 +36,6 @@ export class GetOrdersQueryDto {
   status?: 'pending' | 'received' | 'all' = 'all'
 }
 
-export class CreateOrderUserDto {
-  @IsNotEmpty({ message: ValidationMessages.LOCKER_SLOT_REQUIRED })
-  @Type(() => Number)
-  @IsInt({ message: ValidationMessages.LOCKER_SLOT_INVALID })
-  lockerSlotId!: number
-
-  @IsNotEmpty({ message: ValidationMessages.END_TIME_REQUIRED })
-  @Type(() => Date)
-  @IsDate({ message: ValidationMessages.END_TIME_INVALID })
-  @MinDate(new Date(), { message: ValidationMessages.END_TIME_MIN })
-  endTime!: Date
-}
-
-export class CreateOrderShipperDto {
-  @IsNotEmpty({ message: ValidationMessages.PHONE_REQUIRED })
-  @IsPhoneNumber('VN', { message: ValidationMessages.PHONE_INVALID })
-  phone!: string
-
-  @IsNotEmpty({ message: ValidationMessages.LOCKER_SLOT_REQUIRED })
-  @Type(() => Number)
-  @IsInt({ message: ValidationMessages.LOCKER_SLOT_INVALID })
-  lockerSlotId!: number
-
-  @IsNotEmpty({ message: ValidationMessages.ORDER_CODE_REQUIRED })
-  @IsString({ message: ValidationMessages.ORDER_CODE_INVALID })
-  order_code!: string
-}
-
 export interface OrderDTO {
   id: number
   order_code: string
@@ -142,9 +114,9 @@ export class SendPackageDto {
   @IsNotEmpty({ message: 'Thời gian nhận hàng không được để trống.' })
   receiveDateTime!: string
 
+  @IsOptional()
   @IsString({ message: 'Mã đơn hàng phải là chuỗi ký tự.' })
-  @IsNotEmpty({ message: 'Mã đơn hàng không được để trống.' })
-  orderCode!: string
+  orderCode?: string
 
   @IsString({ message: 'Số điện thoại người nhận phải là chuỗi ký tự.' })
   @IsNotEmpty({ message: 'Số điện thoại người nhận không được để trống.' })
