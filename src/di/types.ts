@@ -55,7 +55,11 @@ const TYPES = {
   PayosController: Symbol.for('PayosController'),
 
   // Mail
-  MailService: Symbol.for('MailService')
+  MailService: Symbol.for('MailService'),
+
+  // Chatbot
+  ChatService: Symbol.for('ChatService'),
+  ChatController: Symbol.for('ChatController')
 }
 
 export default TYPES

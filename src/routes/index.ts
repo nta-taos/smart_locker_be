@@ -2,6 +2,7 @@ import { Router } from 'express'
 
 import createAuthRouter from './auth.route'
 import createBuildingRouter from './building.route'
+import createChatRouter from './chat.route'
 import createNotificationRouter from './notification.route'
 import createOrderAuthorizationRouter from './order-authorization.route'
 import createOrderRouter from './order.route'
@@ -20,6 +21,7 @@ export default function createRoutes(): Router {
   routes.use('/notifications', createNotificationRouter())
   routes.use('/payments', createPaymentsRouter())
   routes.use('/order-authorizations', createOrderAuthorizationRouter())
+  routes.use('/chat', createChatRouter())
 
   return routes
 }

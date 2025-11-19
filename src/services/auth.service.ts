@@ -19,8 +19,8 @@ import { Wallet } from '@/entities/wallet.model'
 import { BuildingRepository } from '@/repositories/building.repository'
 import { UserRepository } from '@/repositories/user.repository'
 
-import { RedisService } from './redis.service'
 import { MailService } from './mail.service'
+import { RedisService } from './redis.service'
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 @injectable()
