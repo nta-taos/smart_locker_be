@@ -1,6 +1,5 @@
 import { Type } from 'class-transformer'
 import {
-  IsDate,
   IsDateString,
   IsEnum,
   IsIn,
@@ -9,8 +8,7 @@ import {
   IsOptional,
   IsPhoneNumber,
   IsString,
-  Min,
-  MinDate
+  Min
 } from 'class-validator'
 
 import { ValidationMessages } from '@/common/constants/messages'
