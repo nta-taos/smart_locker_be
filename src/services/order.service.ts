@@ -486,7 +486,7 @@ export class OrderService {
       })
       await manager.save(walletTransaction)
 
-      const generatedOrderCode = `RENT-${lockerSlot.id}-${Date.now().toString().slice(-6)}`
+      const generatedOrderCode = `RENT-${Date.now().toString().slice(-6)}`
 
       const order = manager.create(Order, {
         sender: user,

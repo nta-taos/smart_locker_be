@@ -35,3 +35,12 @@ export const MQTT_CONFIG = {
   username: process.env.MQTT_USERNAME || '',
   password: process.env.MQTT_PASSWORD || ''
 }
+
+export const PAYOS_CONFIG = {
+  clientId: process.env.PAYOS_CLIENT_ID || '',
+  apiKey: process.env.PAYOS_API_KEY || '',
+  checksumKey: process.env.PAYOS_CHECKSUM_KEY || '',
+  returnUrl: `${CLIENT_BASE_URL}/wallet/success`,
+  cancelUrl: `${CLIENT_BASE_URL}/wallet/cancel`,
+  timeout: Number(process.env.PAYOS_TIMEOUT) || 5000
+}

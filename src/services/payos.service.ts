@@ -6,6 +6,7 @@ import { injectable, inject } from 'inversify'
 
 import { TransactionType } from '@/common/enum/transaction.enum'
 import { ApiError } from '@/common/responses'
+import { PAYOS_CONFIG } from '@/config/config'
 import { AppDataSource } from '@/config/mysql'
 import TYPES from '@/di/types'
 import { User } from '@/entities/user.model'
@@ -17,11 +18,6 @@ import SocketService from './socket.service'
 
 @injectable()
 export class PayosService {
-  private clientId = process.env.PAYOS_CLIENT_ID || ''
-  private apiKey = process.env.PAYOS_API_KEY || ''
-  private checksumKey = process.env.PAYOS_CHECKSUM_KEY || ''
-  private returnUrl = process.env.PAYOS_RETURN_URL || ''
-  private cancelUrl = process.env.PAYOS_CANCEL_URL || ''
   private gatewayBase = 'https://api-merchant.payos.vn/v2/payment-requests'
 
   constructor(
@@ -41,24 +37,24 @@ export class PayosService {
 
     const signData = {
       amount,
-      cancelUrl: this.cancelUrl,
+      cancelUrl: PAYOS_CONFIG.cancelUrl,
       description,
       orderCode,
-      returnUrl: this.returnUrl
+      returnUrl: PAYOS_CONFIG.returnUrl
     }
 
-    const signature = this.createSignature(signData, this.checksumKey)
+    const signature = this.createSignature(signData, PAYOS_CONFIG.checksumKey)
 
     const body = {
       ...signData,
       signature,
-      cancelUrl: this.cancelUrl,
-      returnUrl: this.returnUrl
+      cancelUrl: PAYOS_CONFIG.cancelUrl,
+      returnUrl: PAYOS_CONFIG.returnUrl
     }
 
     const headers = {
-      'x-client-id': this.clientId,
-      'x-api-key': this.apiKey,
+      'x-client-id': PAYOS_CONFIG.clientId,
+      'x-api-key': PAYOS_CONFIG.apiKey,
       'Content-Type': 'application/json'
     }
 
@@ -124,7 +120,7 @@ export class PayosService {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   verifyChecksum(dataObject: Record<string, any>, signature: string): boolean {
-    const expectedSignature = this.createSignature(dataObject, this.checksumKey)
+    const expectedSignature = this.createSignature(dataObject, PAYOS_CONFIG.checksumKey)
     return signature === expectedSignature
   }
 
