@@ -3,6 +3,7 @@ import { Container } from 'inversify'
 import { MQTT_CONFIG } from '@/config/config'
 import { AuthController } from '@/controllers/auth.controller'
 import { BuildingController } from '@/controllers/building.controller'
+import { ChatController } from '@/controllers/chat.controller'
 import { NotificationController } from '@/controllers/notification.controller'
 import { OrderAuthorizationController } from '@/controllers/order-authorization.controller'
 import { OrderController } from '@/controllers/order.controller'
@@ -18,6 +19,7 @@ import { UserRepository } from '@/repositories/user.repository'
 import { WalletTransactionRepository } from '@/repositories/wallet-transaction.repository'
 import { AuthService } from '@/services/auth.service'
 import { BuildingService } from '@/services/building.service'
+import { ChatService } from '@/services/chat.service'
 import { ImageUploadService } from '@/services/image-upload.service'
 import { MailService } from '@/services/mail.service'
 import { MQTTService } from '@/services/mqtt.service'
@@ -92,5 +94,9 @@ container.bind<PayosController>(TYPES.PayosController).to(PayosController)
 
 // MAIL
 container.bind<MailService>(TYPES.MailService).to(MailService)
+
+// Chatbot
+container.bind<ChatService>(TYPES.ChatService).to(ChatService)
+container.bind<ChatController>(TYPES.ChatController).to(ChatController)
 
 export { container }

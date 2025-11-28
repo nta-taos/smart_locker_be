@@ -25,7 +25,9 @@ export const SuccessMessages = {
   PAYMENT_CONFIRMED: 'Xác nhận thanh toán thành công.',
   ORDER_AUTHORIZATION_CREATED: 'Yêu cầu ủy quyền đã được tạo thành công.',
   ORDER_AUTHORIZATION_RETRIEVED: 'Lấy thông tin ủy quyền thành công.',
-  ORDER_AUTHORIZATION_USED: 'Yêu cầu ủy quyền đã được sử dụng.'
+  ORDER_AUTHORIZATION_USED: 'Yêu cầu ủy quyền đã được sử dụng.',
+
+  CHATBOT_REPLY: 'Tạo phản hồi trợ lý AI thành công.'
 }
 
 export const ErrorMessages = {

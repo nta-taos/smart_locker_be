@@ -4,12 +4,16 @@ import crypto from 'crypto'
 import https from 'https'
 import { injectable, inject } from 'inversify'
 
+import { TransactionType } from '@/common/enum/transaction.enum'
+import { ApiError } from '@/common/responses'
 import { AppDataSource } from '@/config/mysql'
 import TYPES from '@/di/types'
-import { Wallet } from '@/entities/wallet.model'
+import { User } from '@/entities/user.model'
+import { WalletTransaction } from '@/entities/wallet-transaction.model'
 import { UserRepository } from '@/repositories/user.repository'
 
 import { RedisService } from './redis.service'
+import SocketService from './socket.service'
 
 @injectable()
 export class PayosService {
@@ -22,7 +26,8 @@ export class PayosService {
 
   constructor(
     @inject(TYPES.RedisService) private readonly redisService: RedisService,
-    @inject(TYPES.UserRepository) private readonly userRepo: UserRepository
+    @inject(TYPES.UserRepository) private readonly userRepo: UserRepository,
+    @inject(TYPES.SocketService) private readonly socketService: SocketService
   ) {
     autoBind(this)
   }
@@ -127,7 +132,6 @@ export class PayosService {
    * Khi PayOS gửi webhook báo thanh toán thành công → cộng tiền vào ví
    */
   async confirmPayment(orderCode: number) {
-    console.log('Confirming payment for orderCode:', orderCode)
     const data = await this.redisService.getCache<{
       userId: number
       amount: number
@@ -136,19 +140,41 @@ export class PayosService {
 
     if (!data) return null
 
-    const user = await this.userRepo.findById(data.userId)
-    if (!user || !user.wallet) return null
+    return await AppDataSource.transaction(async (manager) => {
+      const user = await manager.findOne(User, {
+        where: { id: data.userId },
+        relations: ['wallet'],
+        lock: { mode: 'pessimistic_write' }
+      })
 
-    const walletRepo = AppDataSource.getRepository(Wallet)
-    const wallet = await walletRepo.findOne({ where: { id: user.wallet.id } })
-    if (!wallet) return null
+      if (!user || !user.wallet) {
+        throw ApiError.internal('Không tìm thấy thông tin ví của người dùng.')
+      }
 
-    wallet.balance = Number(wallet.balance) + Number(data.amount)
-    await walletRepo.save(wallet)
+      user.wallet.balance = Number(user.wallet.balance) + Number(data.amount)
+      await manager.save(user.wallet)
 
-    await this.redisService.delCache(`payos:payment:${orderCode}`)
+      const walletTransaction = manager.create(WalletTransaction, {
+        type: TransactionType.CREDIT,
+        wallet: user.wallet,
+        amount: data.amount,
+        description: `Nạp tiền ví PayOS: ${orderCode}`
+      })
+      await manager.save(walletTransaction)
 
-    return { userId: data.userId, amount: data.amount, orderId: data.orderId }
+      this.socketService.emitToUser(user.id, 'wallet:updated', user.wallet)
+      this.socketService.emitToUser(user.id, 'transaction:created', walletTransaction)
+
+      await this.redisService.delCache(`payos:payment:${orderCode}`)
+      await this.redisService.delCache(`user:${user.id}`)
+
+      return {
+        userId: data.userId,
+        amount: data.amount,
+        orderId: data.orderId,
+        transactionId: walletTransaction.id
+      }
+    })
   }
 }
 
