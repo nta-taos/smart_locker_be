@@ -1,7 +1,7 @@
 import autoBind from 'auto-bind'
 import dayjs from 'dayjs'
 import { injectable, inject } from 'inversify'
-import { EntityManager, FindOptionsWhere } from 'typeorm'
+import { EntityManager, FindOptionsWhere, Like, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm'
 
 import { ErrorMessages } from '@/common/constants/messages'
 import { SlotPricePerTime, SlotSize, SlotStatus } from '@/common/enum/locker-slot.enum'
@@ -69,13 +69,35 @@ export class OrderService {
     return toOrderDTO(order)
   }
 
-  async getOrdersByUserId(userId: number, status: string = 'all', page: number = 1, limit: number = 6) {
+  async getOrdersByUserId(
+    userId: number,
+    status: string = 'all',
+    page: number = 1,
+    limit: number = 6,
+    code?: string,
+    from?: string,
+    to?: string
+  ) {
     let whereCondition: FindOptionsWhere<Order>[] = [{ sender: { id: userId } }, { receiver: { id: userId } }]
 
     if (status === 'pending') {
-      whereCondition = whereCondition.map((cond) => ({ ...cond, status: OrderStatus.PENDING }))
+      whereCondition = whereCondition.map((cond) => ({ ...cond, status: OrderStatus.SENDING || OrderStatus.PENDING }))
     } else if (status === 'received') {
       whereCondition = whereCondition.map((cond) => ({ ...cond, status: OrderStatus.RECEIVED }))
+    }
+
+    if (code) {
+      whereCondition = whereCondition.map((cond) => ({ ...cond, order_code: Like(`%${code}%`) }))
+    }
+
+    if (from || to) {
+      if (from && to) {
+        whereCondition = whereCondition.map((cond) => ({ ...cond, start_time: Between(new Date(from), new Date(to)) }))
+      } else if (from) {
+        whereCondition = whereCondition.map((cond) => ({ ...cond, start_time: MoreThanOrEqual(new Date(from)) }))
+      } else if (to) {
+        whereCondition = whereCondition.map((cond) => ({ ...cond, start_time: LessThanOrEqual(new Date(to)) }))
+      }
     }
 
     const { data, total } = await this.orderRepository.findAndCount({
@@ -95,7 +117,15 @@ export class OrderService {
     }
   }
 
-  async getOrdersByShipperId(shipperId: number, status: string = 'all', page: number = 1, limit: number = 6) {
+  async getOrdersByShipperId(
+    shipperId: number,
+    status: string = 'all',
+    page: number = 1,
+    limit: number = 6,
+    code?: string,
+    from?: string,
+    to?: string
+  ) {
     const whereCondition: FindOptionsWhere<Order> = {
       sender: { id: shipperId }
     }
@@ -104,6 +134,24 @@ export class OrderService {
       whereCondition.status = OrderStatus.PENDING
     } else if (status === 'received') {
       whereCondition.status = OrderStatus.RECEIVED
+    }
+
+    if (code) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(whereCondition as any).order_code = Like(`%${code}%`)
+    }
+
+    if (from || to) {
+      if (from && to) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(whereCondition as any).start_time = Between(new Date(from), new Date(to))
+      } else if (from) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(whereCondition as any).start_time = MoreThanOrEqual(new Date(from))
+      } else if (to) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(whereCondition as any).start_time = LessThanOrEqual(new Date(to))
+      }
     }
 
     const { data, total } = await this.orderRepository.findAndCount({
@@ -145,7 +193,7 @@ export class OrderService {
   }
 
   async createSendPackageOrder(userId: number, sendData: SendPackageDto) {
-    const { lockerId, receiveDateTime, orderCode, receiverPhoneNumber, size } = sendData
+    const { lockerId, receiveDateTime, orderCode: providedOrderCode, receiverPhoneNumber, size } = sendData
 
     const sender = await this.userRepository.findById(userId)
     if (!sender) {
@@ -207,17 +255,19 @@ export class OrderService {
       senderWithWallet.wallet.balance -= totalCost
       await manager.save(senderWithWallet.wallet)
 
+      const generatedOrderCode = providedOrderCode || `SEND-${lockerSlot.id}-${Date.now().toString().slice(-6)}`
+
       const walletTransaction = manager.create(WalletTransaction, {
         type: TransactionType.DEBIT,
         wallet: senderWithWallet.wallet,
         amount: totalCost,
-        description: `Thanh toán gửi hàng: ${orderCode} (${billedDurationHours} giờ)`
+        description: `Thanh toán gửi hàng: ${generatedOrderCode} (${billedDurationHours} giờ)`
       })
       await manager.save(walletTransaction)
 
       const order = manager.create(Order, {
         sender: sender,
-        order_code: orderCode,
+        order_code: generatedOrderCode,
         receiver: receiver,
         receiver_phone: receiver?.phone || receiverPhoneNumber,
         lockerSlot,
@@ -242,10 +292,10 @@ export class OrderService {
         userId: sender.id,
         user: sender,
         type: NotificationType.ORDER_CREATED,
-        title: `Đơn hàng ${orderCode} đã được tạo thành công`,
+        title: `Đơn hàng ${generatedOrderCode} đã được tạo thành công`,
         message: `Đơn hàng gửi hàng cho ${receiverPhoneNumber} đã được thanh toán ${totalCost} VND.`,
         isRead: false,
-        data: { orderCode, totalCost, receiverPhoneNumber, role: 'sender' }
+        data: { orderCode: generatedOrderCode, totalCost, receiverPhoneNumber, role: 'sender' }
       })
       await manager.save(senderNotification)
 
@@ -255,7 +305,7 @@ export class OrderService {
           user: receiver,
           type: NotificationType.ORDER_RECEIVED,
           title: `Bạn có gói hàng mới từ ${sender.name}`,
-          message: `Bạn có một gói hàng mới tại tủ khóa. Mã đơn hàng: ${orderCode}. Vui lòng nhận hàng trước ${receiveTimeDayjs.format('HH:mm DD/MM')}.`,
+          message: `Bạn có một gói hàng mới tại tủ khóa. Mã đơn hàng: ${generatedOrderCode}. Vui lòng nhận hàng trước ${receiveTimeDayjs.format('HH:mm DD/MM')}.`,
           isRead: false,
           data: {
             orderId: savedOrder.id,

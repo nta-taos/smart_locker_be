@@ -45,11 +45,14 @@ export class OrderController {
       const limit = parseInt(req.query.limit as string) || undefined
       // (pending | received | all)
       const status = (req.query.status as string) || 'all'
+      const code = (req.query.code as string) || undefined
+      const from = (req.query.from as string) || undefined
+      const to = (req.query.to as string) || undefined
       if (role === UserRole.SHIPPER) {
-        const orders = await this.orderService.getOrdersByShipperId(userId, status, page, limit)
+        const orders = await this.orderService.getOrdersByShipperId(userId, status, page, limit, code, from, to)
         return ApiSuccess.ok(orders, SuccessMessages.ORDERS_RETRIEVED).send(res)
       }
-      const orders = await this.orderService.getOrdersByUserId(userId, status, page, limit)
+      const orders = await this.orderService.getOrdersByUserId(userId, status, page, limit, code, from, to)
       return ApiSuccess.ok(orders, SuccessMessages.ORDERS_RETRIEVED).send(res)
     } catch (err) {
       next(err)
