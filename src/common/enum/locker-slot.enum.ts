@@ -1,7 +1,8 @@
 export enum SlotSize {
   SMALL = 0,
   MEDIUM = 1,
-  LARGE = 2
+  LARGE = 2,
+  XL = 3
 }
 
 export enum SlotStatus {
@@ -12,7 +13,8 @@ export enum SlotStatus {
 }
 
 export const SlotPricePerTime: Record<SlotSize, number> = {
-  [SlotSize.SMALL]: 400,
-  [SlotSize.MEDIUM]: 600,
-  [SlotSize.LARGE]: 800
+  [SlotSize.SMALL]: 800,
+  [SlotSize.MEDIUM]: 1000,
+  [SlotSize.LARGE]: 1200,
+  [SlotSize.XL]: 1900
 }

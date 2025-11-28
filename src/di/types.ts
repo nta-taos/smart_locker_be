@@ -55,7 +55,11 @@ const TYPES = {
   PayosController: Symbol.for('PayosController'),
 
   // Mail
-  MailService: Symbol.for('MailService')
+  MailService: Symbol.for('MailService'),
+  // Push
+  PushSubscriptionRepository: Symbol.for('PushSubscriptionRepository'),
+  PushService: Symbol.for('PushService'),
+  PushController: Symbol.for('PushController')
 }
 
 export default TYPES

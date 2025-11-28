@@ -35,3 +35,9 @@ export const MQTT_CONFIG = {
   username: process.env.MQTT_USERNAME || '',
   password: process.env.MQTT_PASSWORD || ''
 }
+
+export const VAPID_CONFIG = {
+  publicKey: process.env.VAPID_PUBLIC_KEY || '',
+  privateKey: process.env.VAPID_PRIVATE_KEY || '',
+  subject: process.env.VAPID_SUBJECT || 'mailto:admin@example.com'
+}

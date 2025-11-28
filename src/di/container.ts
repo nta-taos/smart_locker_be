@@ -22,6 +22,9 @@ import { ImageUploadService } from '@/services/image-upload.service'
 import { MailService } from '@/services/mail.service'
 import { MQTTService } from '@/services/mqtt.service'
 import { NotificationService } from '@/services/notification.service'
+import { PushSubscriptionRepository } from '@/repositories/push-subscription.repository'
+import { PushService } from '@/services/push.service'
+import { PushController } from '@/controllers/push.controller'
 import { OrderAuthorizationService } from '@/services/order-authorization.service'
 import { OrderService } from '@/services/order.service'
 import { PayosService } from '@/services/payos.service'
@@ -80,6 +83,11 @@ container.bind<RedisService>(TYPES.RedisService).to(RedisService).inSingletonSco
 container.bind<NotificationRepository>(TYPES.NotificationRepository).to(NotificationRepository)
 container.bind<NotificationController>(TYPES.NotificationController).to(NotificationController)
 container.bind<NotificationService>(TYPES.NotificationService).to(NotificationService)
+
+// Push
+container.bind<PushSubscriptionRepository>(TYPES.PushSubscriptionRepository).to(PushSubscriptionRepository)
+container.bind<PushController>(TYPES.PushController).to(PushController)
+container.bind<PushService>(TYPES.PushService).to(PushService)
 
 // bind order authorization
 container.bind<OrderAuthorizationRepository>(TYPES.OrderAuthorizationRepository).to(OrderAuthorizationRepository)
