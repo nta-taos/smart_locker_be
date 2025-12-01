@@ -91,12 +91,20 @@ export class OrderService {
     }
 
     if (from || to) {
-      if (from && to) {
-        whereCondition = whereCondition.map((cond) => ({ ...cond, start_time: Between(new Date(from), new Date(to)) }))
-      } else if (from) {
-        whereCondition = whereCondition.map((cond) => ({ ...cond, start_time: MoreThanOrEqual(new Date(from)) }))
-      } else if (to) {
-        whereCondition = whereCondition.map((cond) => ({ ...cond, start_time: LessThanOrEqual(new Date(to)) }))
+      const fromDay = from ? dayjs(from).startOf('day').toDate() : undefined
+      const toDay =
+        to || from
+          ? dayjs(to || from)
+              .endOf('day')
+              .toDate()
+          : undefined
+
+      if (fromDay && toDay) {
+        whereCondition = whereCondition.map((cond) => ({ ...cond, start_time: Between(fromDay, toDay) }))
+      } else if (fromDay) {
+        whereCondition = whereCondition.map((cond) => ({ ...cond, start_time: MoreThanOrEqual(fromDay) }))
+      } else if (toDay) {
+        whereCondition = whereCondition.map((cond) => ({ ...cond, start_time: LessThanOrEqual(toDay) }))
       }
     }
 
@@ -142,15 +150,23 @@ export class OrderService {
     }
 
     if (from || to) {
-      if (from && to) {
+      const fromDay = from ? dayjs(from).startOf('day').toDate() : undefined
+      const toDay =
+        to || from
+          ? dayjs(to || from)
+              .endOf('day')
+              .toDate()
+          : undefined
+
+      if (fromDay && toDay) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(whereCondition as any).start_time = Between(new Date(from), new Date(to))
-      } else if (from) {
+        ;(whereCondition as any).start_time = Between(fromDay, toDay)
+      } else if (fromDay) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(whereCondition as any).start_time = MoreThanOrEqual(new Date(from))
-      } else if (to) {
+        ;(whereCondition as any).start_time = MoreThanOrEqual(fromDay)
+      } else if (toDay) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(whereCondition as any).start_time = LessThanOrEqual(new Date(to))
+        ;(whereCondition as any).start_time = LessThanOrEqual(toDay)
       }
     }
 
