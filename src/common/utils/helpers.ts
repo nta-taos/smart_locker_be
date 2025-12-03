@@ -23,13 +23,9 @@ export const calculateFee = (hours: number, type: number): number => {
   const roundedHours = parseFloat(hours.toFixed(2))
 
   switch (type) {
-    case OrderType.USER_IN_BUILDING:
-      return roundedHours > 24 ? (roundedHours - 24) * rate : 0
-    case OrderType.USER_OUT_BUILDING:
+    case OrderType.RENT_LOCKER:
       return roundedHours * rate
-    case OrderType.SHIPPER_TO_USER_IN_BUILDING:
-      return roundedHours > 24 * 3 ? (roundedHours - 24 * 3) * rate : 0
-    case OrderType.SHIPPER_TO_USER_OUT_BUILDING:
+    case OrderType.SEND_PACKAGE:
       return roundedHours * rate
     default:
       return 0
