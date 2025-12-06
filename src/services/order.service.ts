@@ -333,11 +333,11 @@ export class OrderService {
         await manager.save(receiverNotification)
       }
 
-      // try {
-      //   await this.mqttService.sendCommand(lockerSlot.locker.id, lockerSlot.id, lockerSlot.hw_index, 'OPEN')
-      // } catch {
-      //   throw ApiError.badRequest('Không thể mở khóa thiết bị, vui lòng thử lại.')
-      // }
+      try {
+        await this.mqttService.sendCommand(lockerSlot.locker.id, lockerSlot.id, lockerSlot.hw_index, 'OPEN')
+      } catch {
+        throw ApiError.badRequest('Không thể mở khóa thiết bị, vui lòng thử lại.')
+      }
 
       if (orderLite.receiver?.id) {
         this.socketService.emitToUser(orderLite.receiver?.id, 'order:created', orderLite)
@@ -377,11 +377,11 @@ export class OrderService {
       throw ApiError.badRequest('Ngăn tủ hiện đang trống, không thể mở.')
     }
 
-    // try {
-    //   await this.mqttService.sendCommand(lockerSlot.locker.id, lockerSlot.id, lockerSlot.hw_index, 'OPEN')
-    // } catch {
-    //   throw ApiError.badRequest('Không thể mở khóa thiết bị, vui lòng thử lại.')
-    // }
+    try {
+      await this.mqttService.sendCommand(lockerSlot.locker.id, lockerSlot.id, lockerSlot.hw_index, 'OPEN')
+    } catch {
+      throw ApiError.badRequest('Không thể mở khóa thiết bị, vui lòng thử lại.')
+    }
 
     order.status = OrderStatus.RECEIVED
     lockerSlot.status = SlotStatus.EMPTY
@@ -538,11 +538,11 @@ export class OrderService {
       })
       await manager.save(rentalNotification)
 
-      // try {
-      //   await this.mqttService.sendCommand(lockerSlot.locker.id, lockerSlot.id, lockerSlot.hw_index, 'OPEN')
-      // } catch {
-      //   throw ApiError.badRequest('Không thể mở khóa thiết bị, vui lòng thử lại.')
-      // }
+      try {
+        await this.mqttService.sendCommand(lockerSlot.locker.id, lockerSlot.id, lockerSlot.hw_index, 'OPEN')
+      } catch {
+        throw ApiError.badRequest('Không thể mở khóa thiết bị, vui lòng thử lại.')
+      }
 
       this.socketService.emitToUser(orderLite.sender?.id, 'order:created', orderLite)
       this.socketService.emitToUser(orderLite.sender?.id, 'wallet:updated', renterWithWallet.wallet)
