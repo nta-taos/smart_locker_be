@@ -70,8 +70,8 @@ export class OrderAuthorizationService {
             Xác thực yêu cầu ủy quyền đơn hàng
           </div>
           <div style="padding: 24px;">
-            <p>Xin chào <strong>${user.name}</strong>,</p>
-            <p>Bạn vừa tạo yêu cầu ủy quyền cho <strong>đơn hàng #${order.id}</strong>.</p>
+            <p>Xin chào <strong>${name}</strong>,</p>
+            <p><strong>${user.name}</strong> vừa tạo yêu cầu ủy quyền cho bạn nhận <strong>đơn hàng #${order.id}</strong>.</p>
             <p>Vui lòng nhấn nút bên dưới để xác thực quyền truy cập:</p>
             <p style="text-align: center; margin: 24px 0;">
               <a href="${verifyLink}" style="background-color: #1677ff; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold;">
