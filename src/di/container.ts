@@ -10,6 +10,7 @@ import { OrderController } from '@/controllers/order.controller'
 import { PayosController } from '@/controllers/payos.controller'
 import { UserController } from '@/controllers/user.controller'
 import { WalletTransactionController } from '@/controllers/wallet-transaction.controller'
+import { WalletController } from '@/controllers/wallet.controller'
 import { BuildingRepository } from '@/repositories/building.repository'
 import { LockerSlotRepository } from '@/repositories/locker-slot.repository'
 import { NotificationRepository } from '@/repositories/notification.repository'
@@ -31,6 +32,7 @@ import { RedisService } from '@/services/redis.service'
 import SocketService from '@/services/socket.service'
 import { UserService } from '@/services/user.service'
 import { WalletTransactionService } from '@/services/wallet-transaction.service'
+import { WalletService } from '@/services/wallet.service'
 
 import TYPES from './types'
 
@@ -54,6 +56,10 @@ container.bind<BuildingController>(TYPES.BuildingController).to(BuildingControll
 container.bind<WalletTransactionRepository>(TYPES.WalletTransactionRepository).to(WalletTransactionRepository)
 container.bind<WalletTransactionService>(TYPES.WalletTransactionService).to(WalletTransactionService)
 container.bind<WalletTransactionController>(TYPES.WalletTransactionController).to(WalletTransactionController)
+
+// Bind wallet dependencies
+container.bind<WalletService>(TYPES.WalletService).to(WalletService)
+container.bind<WalletController>(TYPES.WalletController).to(WalletController)
 
 // Bind order dependencies
 container.bind<OrderRepository>(TYPES.OrderRepository).to(OrderRepository)

@@ -9,6 +9,7 @@ import createOrderRouter from './order.route'
 import createPaymentsRouter from './payments.route'
 import createTransactionRouter from './transaction.route'
 import createUserRouter from './user.route'
+import createWalletRouter from './wallet.route'
 
 export default function createRoutes(): Router {
   const routes = Router()
@@ -22,6 +23,7 @@ export default function createRoutes(): Router {
   routes.use('/payments', createPaymentsRouter())
   routes.use('/order-authorizations', createOrderAuthorizationRouter())
   routes.use('/chat', createChatRouter())
+  routes.use('/wallet', createWalletRouter())
 
   return routes
 }

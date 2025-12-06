@@ -27,7 +27,8 @@ export const SuccessMessages = {
   ORDER_AUTHORIZATION_RETRIEVED: 'Lấy thông tin ủy quyền thành công.',
   ORDER_AUTHORIZATION_USED: 'Yêu cầu ủy quyền đã được sử dụng.',
 
-  CHATBOT_REPLY: 'Tạo phản hồi trợ lý AI thành công.'
+  CHATBOT_REPLY: 'Tạo phản hồi trợ lý AI thành công.',
+  WALLET_FETCHED: 'Lấy thông tin ví thành công.'
 }
 
 export const ErrorMessages = {

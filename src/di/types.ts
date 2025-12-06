@@ -59,7 +59,11 @@ const TYPES = {
 
   // Chatbot
   ChatService: Symbol.for('ChatService'),
-  ChatController: Symbol.for('ChatController')
+  ChatController: Symbol.for('ChatController'),
+
+  // Wallet
+  WalletService: Symbol.for('WalletService'),
+  WalletController: Symbol.for('WalletController')
 }
 
 export default TYPES
