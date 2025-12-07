@@ -209,7 +209,7 @@ export class OrderService {
   }
 
   async createSendPackageOrder(userId: number, sendData: SendPackageDto) {
-    const { lockerId, receiveDateTime, orderCode: providedOrderCode, receiverPhoneNumber, size } = sendData
+    const { lockerId, receiveDateTime, orderCode: providedOrderCode, receiverPhoneNumber, size, isFood } = sendData
 
     const sender = await this.userRepository.findById(userId)
     if (!sender) {
@@ -293,6 +293,7 @@ export class OrderService {
         type: OrderType.SEND_PACKAGE,
         payment_status: PaymentStatus.PAID,
         fee: totalCost,
+        is_food: isFood ? 1 : 0,
         transaction: walletTransaction
       })
 
@@ -438,7 +439,7 @@ export class OrderService {
   }
 
   async createRentalOrder(user: User, rentData: RentLockerDto) {
-    const { lockerId, receiveDateTime, size } = rentData
+    const { lockerId, receiveDateTime, size, isFood } = rentData
     const receiveTimeDayjs = dayjs(receiveDateTime)
     const now = dayjs()
     const durationHours = receiveTimeDayjs.diff(now, 'hour', true)
@@ -516,6 +517,7 @@ export class OrderService {
         type: OrderType.RENT_LOCKER,
         payment_status: PaymentStatus.PAID,
         fee: totalCost,
+        is_food: isFood ? 1 : 0,
         transaction: walletTransaction
       })
 

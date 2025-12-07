@@ -59,4 +59,7 @@ export class Order extends BaseModel {
 
   @Column({ type: 'tinyint', default: PaymentStatus.UNPAID, comment: '0=Chưa thanh toán, 1=Đã thanh toán' })
   payment_status!: number
+
+  @Column({ type: 'tinyint', default: 0, comment: '0 = Không phải đồ ăn, 1 = Đồ ăn' })
+  is_food!: number
 }

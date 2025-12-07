@@ -44,6 +44,7 @@ export interface OrderDTO {
   end_time: Date
   type: number
   payment_status: number
+  is_food: number
   sender: {
     id: number
     phone: string
@@ -77,6 +78,7 @@ export function toOrderDTO(order: Order): OrderDTO {
     end_time: order.end_time,
     type: order.type,
     payment_status: order.payment_status,
+    is_food: order.is_food,
     sender: {
       id: order.sender.id,
       phone: order.sender.phone,
@@ -126,6 +128,9 @@ export class SendPackageDto {
   })
   @IsNotEmpty({ message: 'Kích thước slot không được để trống.' })
   size!: SlotSize
+
+  @IsOptional()
+  isFood?: boolean
 }
 
 export class RentLockerDto {
@@ -141,4 +146,7 @@ export class RentLockerDto {
   })
   @IsNotEmpty({ message: 'Kích thước slot không được để trống.' })
   size!: SlotSize
+
+  @IsOptional()
+  isFood?: boolean
 }
