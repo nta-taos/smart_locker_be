@@ -7,6 +7,7 @@ import { ErrorMessages } from '@/common/constants/messages'
 import { SlotPricePerTime, SlotSize, SlotStatus } from '@/common/enum/locker-slot.enum'
 import { LockerStatus } from '@/common/enum/locker.enum'
 import { NotificationType } from '@/common/enum/notification.enum'
+import { OrderAuthorizationStatus } from '@/common/enum/order-authorization.enum'
 import { OrderStatus, OrderType, PaymentStatus } from '@/common/enum/order.enum'
 import { TransactionType } from '@/common/enum/transaction.enum'
 import { ApiError } from '@/common/responses'
@@ -50,19 +51,26 @@ export class OrderService {
   }
 
   async getOrderById(orderId: number, userId: number) {
-    console.log('check', orderId, userId)
     const options = {
-      relations: ['sender', 'receiver', 'lockerSlot']
+      relations: ['sender', 'receiver', 'lockerSlot', 'authorizations']
     }
 
     const order = await this.orderRepository.findOneByCondition({ id: orderId }, options)
-    console.log(order)
 
     if (!order) {
       throw ApiError.notFound('Không tìm thấy đơn hàng.')
     }
 
-    if (order.sender.id !== userId || order.receiver?.id !== userId) {
+    const user = await this.userRepository.findById(userId)
+    const isSender = order.sender.id === userId
+    const isReceiver = order.receiver?.id === userId
+    const isAuthorized =
+      user &&
+      order.authorizations?.some(
+        (auth) => auth.email === user.email && auth.status === OrderAuthorizationStatus.PENDING
+      )
+
+    if (!isSender && !isReceiver && !isAuthorized) {
       throw ApiError.badRequest('Bạn không có quyền xem đơn hàng này.')
     }
 
@@ -78,18 +86,45 @@ export class OrderService {
     from?: string,
     to?: string
   ) {
-    let whereCondition: FindOptionsWhere<Order>[] = [{ sender: { id: userId } }, { receiver: { id: userId } }]
+    // Get user to access email for authorization check
+    const user = await this.userRepository.findById(userId)
+    if (!user) {
+      throw ApiError.notFound('Không tìm thấy người dùng.')
+    }
 
+    const queryBuilder = this.orderRepository
+      .getQueryBuilder('order')
+      .leftJoinAndSelect('order.sender', 'sender')
+      .leftJoinAndSelect('order.receiver', 'receiver')
+      .leftJoinAndSelect('order.lockerSlot', 'lockerSlot')
+      .leftJoin('order.authorizations', 'authorization')
+      .where(
+        '(order.sender_id = :userId OR order.receiver_id = :userId OR (authorization.email = :userEmail AND authorization.status = :authStatus))',
+        {
+          userId,
+          userEmail: user.email,
+          authStatus: OrderAuthorizationStatus.PENDING
+        }
+      )
+
+    // Apply status filter
     if (status === 'pending') {
-      whereCondition = whereCondition.map((cond) => ({ ...cond, status: OrderStatus.SENDING || OrderStatus.PENDING }))
+      queryBuilder.andWhere('(order.status = :sendingStatus OR order.status = :pendingStatus)', {
+        sendingStatus: OrderStatus.SENDING,
+        pendingStatus: OrderStatus.PENDING
+      })
     } else if (status === 'received') {
-      whereCondition = whereCondition.map((cond) => ({ ...cond, status: OrderStatus.RECEIVED }))
+      queryBuilder.andWhere('order.status = :receivedStatus', {
+        receivedStatus: OrderStatus.RECEIVED
+      })
     }
 
+    // Apply code filter
     if (code) {
-      whereCondition = whereCondition.map((cond) => ({ ...cond, order_code: Like(`%${code}%`) }))
+      queryBuilder.andWhere('order.order_code LIKE :code', { code: `%${code}%` })
     }
 
+    // Apply date range filter
     if (from || to) {
       const fromDay = from ? dayjs(from).startOf('day').toDate() : undefined
       const toDay =
@@ -100,21 +135,22 @@ export class OrderService {
           : undefined
 
       if (fromDay && toDay) {
-        whereCondition = whereCondition.map((cond) => ({ ...cond, start_time: Between(fromDay, toDay) }))
+        queryBuilder.andWhere('order.start_time BETWEEN :fromDay AND :toDay', { fromDay, toDay })
       } else if (fromDay) {
-        whereCondition = whereCondition.map((cond) => ({ ...cond, start_time: MoreThanOrEqual(fromDay) }))
+        queryBuilder.andWhere('order.start_time >= :fromDay', { fromDay })
       } else if (toDay) {
-        whereCondition = whereCondition.map((cond) => ({ ...cond, start_time: LessThanOrEqual(toDay) }))
+        queryBuilder.andWhere('order.start_time <= :toDay', { toDay })
       }
     }
 
-    const { data, total } = await this.orderRepository.findAndCount({
-      where: whereCondition,
-      relations: ['sender', 'receiver', 'lockerSlot'],
-      order: { start_time: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit
-    })
+    // Apply pagination and ordering
+    queryBuilder
+      .orderBy('order.start_time', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+
+    const [data, total] = await queryBuilder.getManyAndCount()
+
     const orders = data.map(toOrderDTO)
     return {
       page,
@@ -360,11 +396,19 @@ export class OrderService {
 
   async openOrder(user: User, orderId: number) {
     const order = await this.orderRepository.findById(orderId, {
-      relations: ['lockerSlot', 'sender', 'receiver', 'lockerSlot.locker']
+      relations: ['lockerSlot', 'sender', 'receiver', 'lockerSlot.locker', 'authorizations']
     })
 
     if (!order) throw ApiError.notFound('Đơn hàng không tồn tại.')
-    if (order.receiver_phone !== user.phone) {
+
+    // Kiểm tra quyền mở tủ: receiver HOẶC người được ủy quyền
+    const isReceiver = order.receiver_phone === user.phone
+    const isAuthorized =
+      order.authorizations?.some(
+        (auth) => auth.email === user.email && auth.status === OrderAuthorizationStatus.PENDING
+      ) || false
+
+    if (!isReceiver && !isAuthorized) {
       throw ApiError.unauthorized('Bạn không có quyền mở đơn hàng này.')
     }
 

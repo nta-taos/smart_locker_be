@@ -102,7 +102,7 @@ export class OrderAuthorizationService {
    */
   async confirmAuthorizationByToken(orderId: string, token: string) {
     const orderAuthorization = await this.orderAuthRepo.findOneByCondition(
-      { token, order: { id: parseInt(orderId, 10) } },
+      { token, order: { id: parseInt(orderId) } },
       { relations: ['order', 'order.lockerSlot', 'order.lockerSlot.locker'] }
     )
 
@@ -121,11 +121,11 @@ export class OrderAuthorizationService {
       throw ApiError.badRequest('Không tìm thấy locker tương ứng cho đơn hàng này.')
     }
 
-    try {
-      await this.mqttService.sendCommand(slot.locker.id, slot.id, slot.hw_index, 'OPEN')
-    } catch {
-      throw ApiError.internal('Không thể mở khóa thiết bị, vui lòng thử lại.')
-    }
+    // try {
+    //   await this.mqttService.sendCommand(slot.locker.id, slot.id, slot.hw_index, 'OPEN')
+    // } catch {
+    //   throw ApiError.internal('Không thể mở khóa thiết bị, vui lòng thử lại.')
+    // }
 
     orderAuthorization.status = OrderAuthorizationStatus.USED
     order.status = OrderStatus.RECEIVED

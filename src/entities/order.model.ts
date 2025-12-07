@@ -1,10 +1,11 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm'
+import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm'
 
 import { OrderStatus, OrderType, PaymentStatus } from '@/common/enum/order.enum'
 
 import { BaseModel } from './base.model'
 import { LockerSlot } from './locker-slot.model'
 import { User } from './user.model'
+import { OrderAuthorization } from './order-authorization.model'
 
 @Entity('orders')
 export class Order extends BaseModel {
@@ -62,4 +63,7 @@ export class Order extends BaseModel {
 
   @Column({ type: 'tinyint', default: 0, comment: '0 = Không phải đồ ăn, 1 = Đồ ăn' })
   is_food!: number
+
+  @OneToMany(() => OrderAuthorization, (authorization) => authorization.order)
+  authorizations!: OrderAuthorization[]
 }

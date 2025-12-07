@@ -12,6 +12,11 @@ export class OrderRepository extends BaseRepository<Order> implements IOderRepos
     super(Order)
   }
 
+  // Public method to access query builder
+  getQueryBuilder(alias?: string) {
+    return this.repository.createQueryBuilder(alias)
+  }
+
   private async countOrdersByDayLast7Days(userId: number, types: number[]): Promise<Map<string, number>> {
     const rawData = await this.repository
       .createQueryBuilder('order')
