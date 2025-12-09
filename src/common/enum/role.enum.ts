@@ -1,8 +1,6 @@
 export enum UserRole {
   USER = 0,
-  SHIPPER = 1,
-  ADMIN = 2,
-  SUPERADMIN = 3
+  ADMIN = 1
 }
 
 export enum ApprovalStatus {

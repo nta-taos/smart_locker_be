@@ -53,6 +53,27 @@ export class BaseRepository<T extends BaseModel> implements IBaseRepository<T> {
   // Delete an entity by ID
   async deleteEntity(id: number): Promise<boolean> {
     const result = await this.repository.softDelete(id)
-    return (result.affected ?? 0) > 0
+    return (result?.affected ?? 0) > 0
+  }
+
+  // Additional convenience methods
+  create(data: DeepPartial<T>): T {
+    return this.repository.create(data)
+  }
+
+  async save(entity: T): Promise<T> {
+    return this.repository.save(entity)
+  }
+
+  async remove(entity: T): Promise<T> {
+    return this.repository.remove(entity)
+  }
+
+  async softRemove(entity: T): Promise<T> {
+    return this.repository.softRemove(entity)
+  }
+
+  getQueryBuilder(alias?: string) {
+    return this.repository.createQueryBuilder(alias)
   }
 }

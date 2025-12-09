@@ -4,8 +4,8 @@ import { OrderStatus, OrderType, PaymentStatus } from '@/common/enum/order.enum'
 
 import { BaseModel } from './base.model'
 import { LockerSlot } from './locker-slot.model'
-import { User } from './user.model'
 import { OrderAuthorization } from './order-authorization.model'
+import { User } from './user.model'
 
 @Entity('orders')
 export class Order extends BaseModel {

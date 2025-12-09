@@ -1,6 +1,7 @@
 import { Container } from 'inversify'
 
 import { MQTT_CONFIG } from '@/config/config'
+import { AdminController } from '@/controllers/admin.controller'
 import { AuthController } from '@/controllers/auth.controller'
 import { BuildingController } from '@/controllers/building.controller'
 import { ChatController } from '@/controllers/chat.controller'
@@ -13,15 +14,19 @@ import { WalletTransactionController } from '@/controllers/wallet-transaction.co
 import { WalletController } from '@/controllers/wallet.controller'
 import { BuildingRepository } from '@/repositories/building.repository'
 import { LockerSlotRepository } from '@/repositories/locker-slot.repository'
+import { LockerRepository } from '@/repositories/locker.repository'
 import { NotificationRepository } from '@/repositories/notification.repository'
 import { OrderAuthorizationRepository } from '@/repositories/order-authorization.repository'
 import { OrderRepository } from '@/repositories/order.repository'
 import { UserRepository } from '@/repositories/user.repository'
 import { WalletTransactionRepository } from '@/repositories/wallet-transaction.repository'
+import { AdminService } from '@/services/admin.service'
 import { AuthService } from '@/services/auth.service'
 import { BuildingService } from '@/services/building.service'
 import { ChatService } from '@/services/chat.service'
 import { ImageUploadService } from '@/services/image-upload.service'
+import { LockerSlotService } from '@/services/locker-slot.service'
+import { LockerService } from '@/services/locker.service'
 import { MailService } from '@/services/mail.service'
 import { MQTTService } from '@/services/mqtt.service'
 import { NotificationService } from '@/services/notification.service'
@@ -69,8 +74,13 @@ container.bind<OrderController>(TYPES.OrderController).to(OrderController)
 // Bind uploand image
 container.bind<ImageUploadService>(TYPES.ImageUploadService).to(ImageUploadService)
 
+// Bind locker dependencies
+container.bind<LockerRepository>(TYPES.LockerRepository).to(LockerRepository)
+container.bind<LockerService>(TYPES.LockerService).to(LockerService)
+
 // Bind locker slot dependencies
 container.bind<LockerSlotRepository>(TYPES.LockerSlotRepository).to(LockerSlotRepository)
+container.bind<LockerSlotService>(TYPES.LockerSlotService).to(LockerSlotService)
 
 // Bind SocketService
 container.bind<SocketService>(TYPES.SocketService).to(SocketService).inSingletonScope()
@@ -104,5 +114,9 @@ container.bind<MailService>(TYPES.MailService).to(MailService)
 // Chatbot
 container.bind<ChatService>(TYPES.ChatService).to(ChatService)
 container.bind<ChatController>(TYPES.ChatController).to(ChatController)
+
+// Admin
+container.bind<AdminService>(TYPES.AdminService).to(AdminService)
+container.bind<AdminController>(TYPES.AdminController).to(AdminController)
 
 export { container }

@@ -47,4 +47,8 @@ export class ApiError extends Error {
   static internal(message: string) {
     return new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, message)
   }
+
+  static forbidden(message: string) {
+    return new ApiError(StatusCodes.FORBIDDEN, message)
+  }
 }

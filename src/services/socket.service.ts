@@ -1,7 +1,6 @@
 import { inject, injectable } from 'inversify'
 import { Server as SocketIOServer, Socket } from 'socket.io'
 
-import { UserRole } from '@/common/enum/role.enum'
 import { verifyToken } from '@/common/utils/jwt'
 import TYPES from '@/di/types'
 import { UserRepository } from '@/repositories/user.repository'
@@ -49,9 +48,6 @@ class SocketService {
         }
         if (user.building?.isPublic) {
           socket.join('publicBuilding')
-        }
-        if (user.role === UserRole.SHIPPER) {
-          socket.join('shipper')
         }
 
         socket.on('disconnect', () => {

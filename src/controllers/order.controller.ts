@@ -3,7 +3,6 @@ import { NextFunction, Request, Response } from 'express'
 import { injectable, inject } from 'inversify'
 
 import { SuccessMessages } from '@/common/constants/messages'
-import { UserRole } from '@/common/enum/role.enum'
 import { ApiSuccess } from '@/common/responses'
 import TYPES from '@/di/types'
 import { SendPackageDto } from '@/dtos/order.dto'
@@ -40,7 +39,6 @@ export class OrderController {
   async getMyOrders(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = (req.user as User).id
-      const role = (req.user as User).role
       const page = parseInt(req.query.page as string) || undefined
       const limit = parseInt(req.query.limit as string) || undefined
       // (pending | received | all)
@@ -48,10 +46,6 @@ export class OrderController {
       const code = (req.query.code as string) || undefined
       const from = (req.query.from as string) || undefined
       const to = (req.query.to as string) || undefined
-      if (role === UserRole.SHIPPER) {
-        const orders = await this.orderService.getOrdersByShipperId(userId, status, page, limit, code, from, to)
-        return ApiSuccess.ok(orders, SuccessMessages.ORDERS_RETRIEVED).send(res)
-      }
       const orders = await this.orderService.getOrdersByUserId(userId, status, page, limit, code, from, to)
       return ApiSuccess.ok(orders, SuccessMessages.ORDERS_RETRIEVED).send(res)
     } catch (err) {

@@ -29,7 +29,7 @@ export class RegisterDto {
   readonly buildingId?: number
 
   @IsOptional()
-  @IsIn([UserRole.USER, UserRole.SHIPPER], { message: ValidationMessages.ROLE_INVALID })
+  @IsIn([UserRole.USER, UserRole.ADMIN], { message: ValidationMessages.ROLE_INVALID })
   readonly role?: number
 }
 

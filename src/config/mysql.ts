@@ -1,7 +1,8 @@
 import 'reflect-metadata'
-import { DataSource } from 'typeorm'
-import { MYSQL_CONFIG, ENV } from './config'
 import * as entities from 'entities'
+import { DataSource } from 'typeorm'
+
+import { MYSQL_CONFIG, ENV } from './config'
 
 export const AppDataSource = new DataSource({
   type: 'mysql',

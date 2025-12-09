@@ -26,6 +26,13 @@ const TYPES = {
   // Locker slot
   LockerSlotRepository: Symbol.for('LockerSlotRepository'),
 
+  // Locker
+  LockerRepository: Symbol.for('LockerRepository'),
+  LockerService: Symbol.for('LockerService'),
+
+  // Locker Slot Service
+  LockerSlotService: Symbol.for('LockerSlotService'),
+
   // uploand
   ImageUploadService: Symbol.for('ImageUploadService'),
 
@@ -63,7 +70,11 @@ const TYPES = {
 
   // Wallet
   WalletService: Symbol.for('WalletService'),
-  WalletController: Symbol.for('WalletController')
+  WalletController: Symbol.for('WalletController'),
+
+  // Admin
+  AdminService: Symbol.for('AdminService'),
+  AdminController: Symbol.for('AdminController')
 }
 
 export default TYPES
