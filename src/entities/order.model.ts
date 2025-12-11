@@ -48,7 +48,8 @@ export class Order extends BaseModel {
     const end = this.end_time ? new Date(this.end_time) : new Date()
     const start = new Date(this.start_time)
     const diffMs = end.getTime() - start.getTime()
-    return diffMs / (1000 * 60 * 60)
+    const hours = diffMs / (1000 * 60 * 60)
+    return Math.round(hours * 100) / 100
   }
 
   @Column({
