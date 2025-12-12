@@ -17,6 +17,33 @@ export class LockerService {
     autoBind(this)
   }
 
+  /**
+   * Generate a unique locker code with format LK_XXXX (e.g., LK_0001, LK_0002)
+   */
+  private async generateLockerCode(): Promise<string> {
+    // Get all existing locker codes
+    const lockers = await this.lockerRepository.findAll({
+      select: ['code'],
+      order: { code: 'DESC' }
+    })
+
+    // Find the highest number from existing codes
+    let maxNumber = 0
+    for (const locker of lockers) {
+      const match = locker.code.match(/^LK_(\d+)$/)
+      if (match) {
+        const num = parseInt(match[1], 10)
+        if (num > maxNumber) {
+          maxNumber = num
+        }
+      }
+    }
+
+    // Increment and format with leading zeros
+    const nextNumber = maxNumber + 1
+    return `LK_${nextNumber.toString().padStart(4, '0')}`
+  }
+
   async getLockersByBuilding(buildingId: number): Promise<Locker[]> {
     return await this.lockerRepository.findAll({
       where: { building: { id: buildingId } },
@@ -48,14 +75,11 @@ export class LockerService {
       throw ApiError.notFound('Không tìm thấy tòa nhà.')
     }
 
-    // Kiểm tra code đã tồn tại chưa
-    const existing = await this.lockerRepository.findOneByCondition({ code: data.code })
-    if (existing) {
-      throw ApiError.badRequest('Mã tủ đã tồn tại.')
-    }
+    // Auto-generate locker code
+    const code = await this.generateLockerCode()
 
     const locker = this.lockerRepository.create({
-      code: data.code,
+      code,
       building: building,
       status: data.status ?? 1, // Default Active
       floor: data.floor ?? null
@@ -66,15 +90,6 @@ export class LockerService {
 
   async updateLocker(lockerId: number, data: UpdateLockerDto): Promise<Locker> {
     const locker = await this.getLockerById(lockerId)
-
-    if (data.code) {
-      // Kiểm tra code mới có bị trùng không
-      const existing = await this.lockerRepository.findOneByCondition({ code: data.code })
-      if (existing && existing.id !== lockerId) {
-        throw ApiError.badRequest('Mã tủ đã tồn tại.')
-      }
-      locker.code = data.code
-    }
 
     if (data.buildingId) {
       const building = await this.buildingRepository.findById(data.buildingId)

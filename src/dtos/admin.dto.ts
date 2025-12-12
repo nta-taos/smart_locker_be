@@ -61,13 +61,9 @@ export class UpdateBuildingDto {
 
 /**
  * DTO for creating a new locker
+ * Note: code is auto-generated with format LK_XXXX
  */
 export class CreateLockerDto {
-  @IsNotEmpty({ message: 'Mã tủ là bắt buộc.' })
-  @IsString({ message: 'Mã tủ phải là chuỗi ký tự.' })
-  @MaxLength(50, { message: 'Mã tủ không được quá 50 ký tự.' })
-  readonly code!: string
-
   @IsNotEmpty({ message: 'ID tòa nhà là bắt buộc.' })
   @IsInt({ message: 'ID tòa nhà phải là số nguyên.' })
   @Min(1, { message: 'ID tòa nhà phải lớn hơn 0.' })
@@ -84,13 +80,9 @@ export class CreateLockerDto {
 
 /**
  * DTO for updating a locker
+ * Note: code cannot be updated after creation
  */
 export class UpdateLockerDto {
-  @IsOptional()
-  @IsString({ message: 'Mã tủ phải là chuỗi ký tự.' })
-  @MaxLength(50, { message: 'Mã tủ không được quá 50 ký tự.' })
-  readonly code?: string
-
   @IsOptional()
   @IsInt({ message: 'ID tòa nhà phải là số nguyên.' })
   @Min(1, { message: 'ID tòa nhà phải lớn hơn 0.' })
