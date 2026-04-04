@@ -5,29 +5,33 @@ import http from 'http'
 import { StatusCodes } from 'http-status-codes'
 import morgan from 'morgan'
 import path from 'path'
-import socketIo from 'socket.io'
+import { Server as SocketIOServer } from 'socket.io'
 
 import { errorHandler } from '@/common/middleware/error-handling.middleware'
 import { ENV } from '@/config/config'
+import { container } from '@/di/container'
+import TYPES from '@/di/types'
+import { MQTTService } from '@/services/mqtt.service'
+import { RedisService } from '@/services/redis.service'
+import SocketService from '@/services/socket.service'
 
 import { ApiError } from '../common/responses/api-error'
 import { AppDataSource } from '../config/mysql'
-import RedisClient from '../config/redis'
-import routes from '../routes/index'
+import createRoutes from '../routes/index'
 
 class App {
   public app: Application
   public server: http.Server
-  public io: socketIo.Server
-  private socketClients: Map<number, string>
+  public io: SocketIOServer
 
   constructor() {
     this.app = express()
     this.server = http.createServer(this.app)
-    this.io = new socketIo.Server(this.server, { cors: { origin: '*' } })
-    this.socketClients = new Map()
-    this.plugins()
+    this.io = new SocketIOServer(this.server, { cors: { origin: '*' } })
+
     this.databaseSync()
+    this.plugins()
+    this.mqttConnect()
     this.cacheConnect()
     this.initSocketIo()
     this.routes()
@@ -36,22 +40,21 @@ class App {
 
   private async databaseSync(): Promise<void> {
     AppDataSource.initialize()
-      .then(() => console.log('Database connected!'))
+      .then(() => console.log('✅ Database connected!'))
       .catch((err) => console.error('Error connecting to DB', err))
   }
 
   private async cacheConnect(): Promise<void> {
-    try {
-      await RedisClient.connect()
-      console.log('✅ Redis connected successfully!')
-    } catch (error) {
-      console.error('❌ Redis connection error:', error)
-    }
+    container.get<RedisService>(TYPES.RedisService)
+  }
+
+  private async mqttConnect(): Promise<void> {
+    container.get<MQTTService>(TYPES.MQTTService)
   }
 
   private routes(): void {
-    this.app.use('/api', routes)
-    this.app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
+    this.app.use('/api', createRoutes())
+    this.app.use('/uploads', express.static(path.join(__dirname, '../../uploads')))
   }
 
   private plugins(): void {
@@ -66,18 +69,8 @@ class App {
   }
 
   private initSocketIo(): void {
-    this.app.set('socket', this.io)
-    this.app.set('socketClients', this.socketClients)
-    this.io.on('connection', (socket: socketIo.Socket) => {
-      let userId: number
-      if (socket.handshake.query.userId) {
-        userId = +socket.handshake.query.userId
-      }
-      this.socketClients.set(userId!, socket.id)
-      socket.on('disconnect', () => {
-        this.socketClients.delete(userId)
-      })
-    })
+    container.bind<SocketIOServer>(TYPES.SocketServer).toConstantValue(this.io)
+    container.get<SocketService>(TYPES.SocketService)
   }
 
   private catchError(): void {
@@ -88,4 +81,4 @@ class App {
   }
 }
 
-export default new App().app
+export default new App()

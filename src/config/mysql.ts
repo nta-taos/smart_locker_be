@@ -1,7 +1,7 @@
 import 'reflect-metadata'
 import { DataSource } from 'typeorm'
-
 import { MYSQL_CONFIG, ENV } from './config'
+import * as entities from 'entities'
 
 export const AppDataSource = new DataSource({
   type: 'mysql',
@@ -11,11 +11,11 @@ export const AppDataSource = new DataSource({
   password: MYSQL_CONFIG.password,
   database: MYSQL_CONFIG.database,
   synchronize: ENV === 'development',
-  logging: ENV === 'development',
-  entities: [ENV === 'production' ? __dirname + '/../entities/*.js' : __dirname + '/../entities/*.ts'],
-  migrations: [ENV === 'production' ? __dirname + '/../migrations/*.js' : __dirname + '/../migrations/*.ts'],
+  logging: false,
+  entities: Object.values(entities),
+  migrations: [__dirname + '/../migrations/*{.ts,.js}'],
   subscribers: [],
-  ssl: {
-    rejectUnauthorized: ENV === 'production'
+  ssl: ENV === 'development' ? false : {
+    rejectUnauthorized: false
   }
 })

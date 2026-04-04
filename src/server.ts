@@ -13,7 +13,7 @@ process.on('uncaughtException', (err) => {
   process.exit(1)
 })
 
-const server = App.listen(PORT, () => {
+const server = App.server.listen(PORT, () => {
   console.log(`App running on port ${PORT}...`)
 })
 

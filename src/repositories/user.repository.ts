@@ -10,10 +10,11 @@ export class UserRepository extends BaseRepository<User> implements IUserReposit
   constructor() {
     super(User)
   }
+  async findByPhone(phone: string): Promise<User | null> {
+    return this.findOneByCondition({ phone })
+  }
 
   async findByEmail(email: string): Promise<User | null> {
     return this.findOneByCondition({ email })
   }
 }
-
-export const userRepository = new UserRepository()

@@ -1,14 +1,15 @@
 import type { Request, Response, NextFunction } from 'express'
-import { StatusCodes } from 'http-status-codes'
 import jwt from 'jsonwebtoken'
 
 import { ApiError } from '@/common/responses/api-error'
 import { JWT_CONFIG } from '@/config/config'
+import { container } from '@/di/container'
+import TYPES from '@/di/types'
+import { RedisService } from '@/services/redis.service'
+import { UserService } from '@/services/user.service'
 
-import ClientRedis from '../../config/redis'
+import { CacheKeys } from '../constants/cache-keys'
 import { ErrorMessages } from '../constants/messages'
-
-const clientRedis = ClientRedis.getClient()
 
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -16,24 +17,42 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     const token = authHeader?.split(' ')[1]
 
     if (!token) {
-      return next(new ApiError(StatusCodes.UNAUTHORIZED, ErrorMessages.TOKEN_REQUIRED))
+      throw ApiError.unauthorized(ErrorMessages.TOKEN_REQUIRED)
     }
 
-    const isRevoked = await clientRedis.get(`blacklist:${token}`)
+    const redisService = container.get<RedisService>(TYPES.RedisService)
+    const isRevoked = await redisService.safeGetCache(CacheKeys.BLACKLIST_TOKEN(token))
     if (isRevoked) {
-      return next(new ApiError(StatusCodes.UNAUTHORIZED, ErrorMessages.TOKEN_REVOKED))
+      throw ApiError.unauthorized(ErrorMessages.TOKEN_REVOKED)
+    }
+    let decoded
+    try {
+      decoded = jwt.verify(token, JWT_CONFIG.secretKey) as jwt.JwtPayload
+    } catch (err) {
+      if (err instanceof jwt.TokenExpiredError) {
+        throw ApiError.unauthorized(ErrorMessages.TOKEN_EXPIRED)
+      }
+      throw ApiError.unauthorized(ErrorMessages.TOKEN_INVALID)
     }
 
-    const decoded = jwt.verify(token, JWT_CONFIG.secretKey) as jwt.JwtPayload
-    if (!decoded || !decoded.user) {
-      return next(new ApiError(StatusCodes.UNAUTHORIZED, ErrorMessages.TOKEN_EXPIRED))
+    if (!decoded || !decoded.sub) {
+      throw ApiError.unauthorized(ErrorMessages.TOKEN_INVALID)
     }
+
+    const userService = container.get<UserService>(TYPES.UserService)
+    let user
+    try {
+      user = await userService.getUserById(parseInt(decoded.sub))
+    } catch {
+      ApiError.unauthorized(ErrorMessages.USER_NOT_FOUND)
+    }
+    if (!user) {
+      throw ApiError.unauthorized(ErrorMessages.USER_NOT_FOUND)
+    }
+    req.user = user
 
     return next()
   } catch (error) {
-    if (error instanceof jwt.TokenExpiredError) {
-      return next(new ApiError(StatusCodes.UNAUTHORIZED, ErrorMessages.TOKEN_EXPIRED))
-    }
-    return next(new ApiError(StatusCodes.UNAUTHORIZED, ErrorMessages.UNAUTHORIZED))
+    next(error)
   }
 }
