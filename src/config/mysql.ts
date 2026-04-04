@@ -13,9 +13,9 @@ export const AppDataSource = new DataSource({
   synchronize: ENV === 'development',
   logging: false,
   entities: Object.values(entities),
-  migrations: [],
+  migrations: [__dirname + '/../migrations/*{.ts,.js}'],
   subscribers: [],
-  ssl: {
+  ssl: ENV === 'development' ? false : {
     rejectUnauthorized: false
   }
 })
